@@ -1526,8 +1526,8 @@ public class UserServiceImpl implements UserService {
 				teamMemberGroupService.addDefaultGroups(Role.PRM_ROLE.getRoleId(), companyProfile.getId(),
 						moduleAccessDTO);
 				utilService.addDefaultDashboardBanners(userId, companyProfile, Role.PRM_ROLE.getRoleId(), false);
-				utilService.insertDefaultCustomSkins(companyProfile, userId);
-				utilService.insertDefaultThemes(companyProfile, userId);
+				utilService.insertDefaultCustomSkins();
+				utilService.insertDefaultThemes();
 
 			}
 			moduleAccess.setDashboardType(DashboardTypeEnum.DASHBOARD);

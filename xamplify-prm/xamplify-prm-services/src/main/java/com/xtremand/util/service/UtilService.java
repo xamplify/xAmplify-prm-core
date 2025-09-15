@@ -4002,20 +4002,22 @@ public class UtilService {
 
 	}
 
-	public void insertDefaultCustomSkins(CompanyProfile company, Integer userId) {
+	public void insertDefaultCustomSkins() {
 
 		List<CustomSkin> customSkins = new ArrayList<CustomSkin>();
+		CompanyProfile company = new CompanyProfile();
+		company.setId(1);
 
-		createSkin(company, userId, CustomModule.FOOTER, "#000", null, null, "Open Sans, sans-serif", webUrl, "#fff",
-				null, null, true, false, null, null, null, null, customSkins);
+		createSkin(company, 1, CustomModule.FOOTER, "#000", null, null, "Open Sans, sans-serif", webUrl, "#fff", null,
+				null, true, false, null, null, null, null, customSkins);
 
-		createSkin(company, userId, CustomModule.TOP_NAVIGATION_BAR, "#fff", "#3575b5", "#fff", "Open Sans, sans-serif",
+		createSkin(company, 1, CustomModule.TOP_NAVIGATION_BAR, "#fff", "#3575b5", "#fff", "Open Sans, sans-serif",
 				webUrl, "#fff", "#008fd5", "#fff", true, false, null, null, null, null, customSkins);
 
-		createSkin(company, userId, CustomModule.LEFT_SIDE_MENU, "#fff", "#3d4f65", "#15c1df", "Open Sans, sans-serif",
+		createSkin(company, 1, CustomModule.LEFT_SIDE_MENU, "#fff", "#3d4f65", "#15c1df", "Open Sans, sans-serif",
 				webUrl, "#34495a", null, null, true, false, null, null, null, null, customSkins);
 
-		createSkin(company, userId, CustomModule.MAIN_CONTENT, "#fff", null, null, "Open Sans, sans-serif", webUrl,
+		createSkin(company, 1, CustomModule.MAIN_CONTENT, "#fff", null, null, "Open Sans, sans-serif", webUrl,
 				"#F1F3FA", null, null, true, false, "#fff", "#00a6e8", "#fff", "#fff", customSkins);
 		hibernateSQLQueryResultUtilDao.saveAll(customSkins);
 		String debugMessage = "Custom Skin Added Successfully";
@@ -4050,27 +4052,30 @@ public class UtilService {
 		customSkins.add(skin);
 	}
 
-	public void insertDefaultThemes(CompanyProfile company, Integer userId) {
+	public void insertDefaultThemes() {
 
 		List<Theme> themes = new ArrayList<Theme>();
 
-		createTheme(company, userId, "Light", "Default or Light Theme", 1,
+		CompanyProfile company = new CompanyProfile();
+		company.setId(1);
+
+		createTheme(company, 1, "Light", "Default or Light Theme", 1,
 				"assets/images/theme/Final/light-theme-custom.webp", Theme.ThemeStatus.LIGHT, null, themes);
 
-		createTheme(company, userId, "Dark", "Dark Theme", 2, "assets/images/theme/Final/dark-theme-custom.webp",
+		createTheme(company, 1, "Dark", "Dark Theme", 2, "assets/images/theme/Final/dark-theme-custom.webp",
 				Theme.ThemeStatus.DARK, null, themes);
 
-		createTheme(company, userId, "Neumorphism Light", "Neumorphism Light", 3,
+		createTheme(company, 1, "Neumorphism Light", "Neumorphism Light", 3,
 				"assets/images/theme/Final/light-theme-custom.webp", Theme.ThemeStatus.NEUMORPHISMLIGHT, null, themes);
 
-		createTheme(company, userId, "Neumorphism Dark", "Neumorphism Dark", 4,
+		createTheme(company, 1, "Neumorphism Dark", "Neumorphism Dark", 4,
 				"assets/images/theme/Final/dark-theme-custom.webp", Theme.ThemeStatus.NEUMORPHISMDARK, null, themes);
 
-		createTheme(company, userId, "Glassomorphism Light", "Glassomorphism Light", 5,
+		createTheme(company, 1, "Glassomorphism Light", "Glassomorphism Light", 5,
 				"assets/images/theme/Final/glassomorphism-light.webp", Theme.ThemeStatus.GLASSMORPHISMLIGHT,
 				"/assets/images/glassmorphism-images/glassomorphism.png", themes);
 
-		createTheme(company, userId, "Glassomorphism Dark", "Glassomorphism Dark", 6,
+		createTheme(company, 1, "Glassomorphism Dark", "Glassomorphism Dark", 6,
 				"assets/images/theme/Final/glassomorphism-dark.webp", Theme.ThemeStatus.GLASSMORPHISMDARK,
 				"/assets/images/glassmorphism-images/glassomorphism-dark.jpg", themes);
 
