@@ -147,12 +147,14 @@ public class HibernateFormDao implements FormDao {
 	@Override
 	public List<String> listFormNamesByCompanyId(Integer userId, String companyProfileName) {
 		String query = "select LOWER(TRIM(form_name)) from xt_form where company_id=:companyId";
-		if (userId == 1) {
-			query = query + " and form_type=" + "'" + FormTypeEnum.XAMPLIFY_DEFAULT_FORM + "'";
-		}
 		Integer companyId = userDao.getCompanyIdByUserId(userId);
-		return sessionFactory.getCurrentSession().createSQLQuery(query)
-				.setParameter(XamplifyConstants.COMPANY_ID, companyId).list();
+		if (companyId != null) {
+			return sessionFactory.getCurrentSession().createSQLQuery(query)
+					.setParameter(XamplifyConstants.COMPANY_ID, companyId).list();
+		} else {
+			return Collections.emptyList();
+		}
+
 	}
 
 	@Override
