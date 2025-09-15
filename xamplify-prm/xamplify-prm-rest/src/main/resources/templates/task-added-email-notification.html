@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+<META http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<style>
+* { font-size: 100%; font-family: Century Gothic;}
+body{font-family: Century Gothic; background-color: #fff;text-align: center}
+table{border:1px solid #dedede;padding:1em 3em;align:center;width:600px;}
+td{font-size: 13px; line-height: 24px; padding: 15px 40px}
+</style>    
+</head>
+<body>
+<table align="center">
+    <tbody>
+        <tr>
+        <td align="center">
+            <a href="https://xamplify.io/login" target="_blank"> 
+            <img src="https://xamplify.io/assets/images/xamplify-logo.png" alt="https://xamplify.io/assets/images/xamplify-logo.png" width="145" align="center"/>
+            </a>
+        </td>
+        </tr>
+        <tr>
+            <td>
+                <p>Hi <span th:text="${toName} ?: 'there'"></span>,</p><br/>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                We wanted to give you a heads up that a task is assigned to you.</td><br/>
+        </tr>
+        <tr>
+           <td>
+	            <b> Task Name: <span th:text="${taskName}">Task Name</span><br/>
+	                Due Date: <span th:text="${dueDate}">Due Date</span><br/>
+	                Assigned By: <span th:text="${assignedByName}">Assigned By</span><br/>
+	                Contact(s) Details:<br/>
+	                <table border="1">
+	                	<tr border="1">
+	                		<th style="border:'1px solid black'">Name</th>
+	                		<th style="border:'1px solid black'">Email Id</th>
+	                	</tr>
+						<tr	border="1" th:each="userDetailsDTO : ${userDetailsDTOs}">
+							<td style="border:'1px solid black'"><span th:text="${userDetailsDTO.fullName} ? ${userDetailsDTO.fullName} : '---'"> </span></td>
+							<td style="border:'1px solid black'"><span th:text="${userDetailsDTO.emailId} ? ${userDetailsDTO.emailId} : '---'"> </span></td>
+						</tr>
+					</table><br/>
+	            </b>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                The xAmplify Team<br/><br/>
+            </td>
+        </tr>
+    </tbody>
+</table>
+</body>
+</html>

@@ -1,0 +1,58 @@
+<!-- Send Email when partner makes a contact as a lead. Vendor will receive a notification email -->
+<!DOCTYPE html>
+<html>
+<head>
+<META http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<style>
+* { font-size: 100%; font-family: Century Gothic;}
+body{font-family: Century Gothic; background-color: #fff;text-align: center}
+table{border:1px solid #dedede;padding:1em 3em;align:center;width:600px;}
+td{font-size: 13px; line-height: 24px; padding: 15px 40px}
+</style>    
+</head>
+<body>
+<table align="center">
+    <tbody>
+        <tr>
+        <td align="center">
+            <a href="https://xamplify.io/login" target="_blank"> 
+            <img src="https://xamplify.io/assets/images/xamplify-logo.png" alt="https://xamplify.io/assets/images/xamplify-logo.png" width="145" align="center"/>
+            </a>
+        </td>
+        </tr>
+        <tr>
+            <td>
+                <p>Hi <span th:text="${toName} ?: 'there'"></span>,</p>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                We’re happy to inform you that a new lead has been added by below <span th:text="${partnerModuleCustomName} ?: 'Partner'"></span>.</td>
+        </tr>
+
+        <tr>
+           <td>
+	            <b> <span th:text="${partnerModuleCustomName} ?: 'Partner'"></span> Name: <span th:text="${lead.createdByName}"><span th:text="${partnerModuleCustomName} ?: 'Partner'"></span> Name</span><br/> 
+	                <span th:text="${partnerModuleCustomName} ?: 'Partner'"></span> Company: <span th:text="${lead.createdByCompanyName}"><span th:text="${partnerModuleCustomName} ?: 'Partner'"></span> Company:</span><br/> 
+	                Lead Name: <span th:text="${lead.firstName}? ${lead.firstName} + ' ' + ${lead.lastName}: ${lead.lastName}">Lead Name</span><br/>
+	                Lead Company: <span th:text="${lead.company} ? ${lead.company} : '---'">Lead Company</span><br/>
+	                Stage: <span th:text="${lead.currentStage.stageName} ? ${lead.currentStage.stageName} : '---'">Stage</span><br/>
+	                Comment: <span th:text="${lead.leadComment} ? ${lead.leadComment} : '---'">Comment</span><br/>
+	            </b>
+            </td>
+        </tr>
+
+        <tr>
+            <td>
+                You’ll be the first to know if <span th:text="${lead.createdByName}"><span th:text="${partnerModuleCustomName} ?: 'Partner'"></span></span> upgrades this to a deal. <br/>We hope to be in touch with you again soon,
+            </td>
+        </tr>
+        <tr>
+            <td>
+                The xAmplify Team<br/><br/>
+            </td>
+        </tr>
+    </tbody>
+</table>
+</body>
+</html>

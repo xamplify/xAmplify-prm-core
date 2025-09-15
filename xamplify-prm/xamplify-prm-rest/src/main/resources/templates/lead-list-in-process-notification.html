@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+<META http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<style>
+* {
+	font-size: 100%;
+	font-family: Century Gothic;
+}
+
+body {
+	font-family: Century Gothic;
+	background-color: #fff;
+	text-align: center
+}
+
+table {
+	border: 1px solid #dedede;
+	padding: 1em 3em;
+	align: center;
+	width: 600px;
+}
+
+td {
+	font-size: 13px;
+	line-height: 24px;
+	padding: 15px 40px
+}
+
+.added {
+	color: green;
+}
+
+.removed {
+	color: red;
+}
+</style>
+</head>
+<body>
+	<table align="center">
+		<tbody>
+			<tr>
+				<td align="center"><a th:href="${targetURL}" target="_blank">
+						<img src="https://xamplify.io/assets/images/xamplify-logo.png"
+						alt="" width="145" align="center" />
+				</a></td>
+			</tr>
+			<tr>
+				<td>
+					<p>
+						Hi <span th:text="${welcomeDisplayName}"></span>,
+					</p>
+				</td>
+			</tr>
+			<tr>
+				<td>
+				Thanks for creating the leads list <b><span th:text="${leadListName}"></span></b>. We’re processing your list and optimizing it for our platform. We’ll send you another email once your list campaign-ready.
+			</td>
+			</tr>
+			
+			<tr>
+				<td style="font-family:Century Gothic;font-size:14px;padding:20px 90px 90px 90px;">
+				We appreciate your patience,<br/><br/>
+				The xAmplify Team
+			</td>
+			</tr>
+		</tbody>
+	</table>
+</body>
+</html>

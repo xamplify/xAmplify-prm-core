@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+<meta charset="UTF-8" />
+<title>Social Campaign</title>
+<style>
+td{font-family:Century Gothic;font-size:14px;padding:1em 0}
+table{border:1px solid #dedede;padding:1em 3em;align:center;width:600px;background-color:#fff}
+h6{font-size:11px;font-weight:400}
+p{margin:10px}
+h5{margin:auto}
+hr{margin:20px;border:1px solid #f1f1f1}
+</style>
+</head>
+<body>
+<div style="background-color: #fafafa">
+	<table align="center">
+		<tr><td align="center" style="padding: 2em;">
+		<a href="javascript:void(0)">
+		<img th:src="${companyLogo}" height="80"/></a></td></tr>
+		<tr>
+			<td>
+			<p>Hi <span th:text="${targetUser?.firstName} ?: 'User'"></span>,</p>
+			<p><span th:text="${emailHeader}"></span></p>
+			</td>
+		</tr>
+		<tr>
+			<td>
+				<div th:each="socialStatus: ${socialStatusList}" style="border: 1px solid #f1f1f1;padding: 10px;overflow: auto; margin-bottom: 10px;">
+				<section>
+				    <section th:if="${socialStatus.scheduledTime}">
+				    <div th:if="${socialStatus?.socialStatusProvider!=null}">
+					    <img th:src="${socialStatus?.socialStatusProvider?.socialConnection?.profileImage}" 
+					    	style="border: solid 1px #dfdfdf;border-radius: 100%;margin-right: 15px;float: left;width: 48px;height: 48px;"/>
+					    <p style="margin: 5px 0;"><b th:text="${socialStatus?.socialStatusProvider?.socialConnection?.profileName}"></b></p>
+					    <h5 th:text="${#dates.format(socialStatus?.scheduledTime, 'dd-MMM-yyyy')}"></h5>
+					    <hr/>
+				    </div>
+				     </section>
+				    <div>
+				    	<p th:text="${socialStatus?.statusMessage}"></p>
+				    	<div th:each="socialStatusContent: ${socialStatus?.socialStatusContents}">
+				    		<div th:switch="${socialStatusContent?.fileType}"> 
+							  <p th:case="'image'"><img th:src="${server_path}+${socialStatusContent?.filePath}" width="110" style="float: left;margin: 0 10px 10px 0;"/></p>
+							  <p th:case="'video'"><img th:src="${server_path}+${socialStatusContent?.filePath}" width="150"/></p>
+							</div>				    			
+				    	</div>
+				    </div>
+				   </section>
+				</div>
+			</td>
+		</tr>
+		<tr>
+			<td align="center" style="padding: 2em 0;" th:if="${campaign?.channelCampaign}">
+				<a  th:href="${targetURL}" target="_blank" style="color: #fff;background-color: #0943e5;text-decoration: none;padding: 10px 40px;">
+					<span th:if="${socialStatus?.socialStatusProvider!=null}">Repost</span>
+					<span th:if="${socialStatus?.socialStatusProvider==null}">Post</span>
+				</a>
+			</td>
+		</tr>
+		
+		<tr>
+			<td>
+				<b>Best regards,</b><br/>
+				<span th:text="${campaign.user.firstName}"></span>&nbsp;<span th:text="${campaign.user.lastName}"></span><br/>
+ 				<span th:text="${companyName}">company name</span>
+			</td>
+		</tr>
+		<tr th:if="${campaign?.unsubscribeStatus}">
+			<td>
+				<h6>If you'd like to unsubscribe and stop receiving these emails <a th:href="${unsubscribeURL}">click here</a></h6>
+			</td>
+		</tr>
+		<tr>
+			<td>
+				<img th:src="${trackingURL}" class='backup_picture' style='display: none' />
+			</td>
+		</tr>
+	</table>
+</div>	
+</body>
+</html>

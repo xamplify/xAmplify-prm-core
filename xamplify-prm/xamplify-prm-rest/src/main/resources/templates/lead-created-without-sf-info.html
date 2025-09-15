@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+<head>
+<META http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<style>
+* {
+	font-size: 100%;
+	font-family: Century Gothic;
+}
+
+body {
+	font-family: Century Gothic;
+	background-color: #fff;
+	text-align: center
+}
+
+table {
+	border: 1px solid #dedede;
+	padding: 1em 3em;
+	align: center;
+	width: 600px;
+}
+
+td {
+	font-size: 13px;
+	line-height: 24px;
+	padding: 15px 40px
+}
+</style>
+</head>
+<body>
+	<table align="center">
+		<tbody>
+			<tr>
+				<td align="center"><a th:href="${targetURL}" target="_blank">
+						<img th:src="${xAmplifyLogo}" alt="" width="145" align="center" />
+				</a></td>
+			</tr>
+			<tr>
+				<td>
+					<p>
+						Hi <span th:text="${welcomeDisplayName}"></span>,
+					</p>
+				</td>
+			</tr>
+			<tr>
+				<td>We wanted to give you a heads up that the recently created lead will sync with Salesforce without account details,
+				as we have not received the necessary information from Salesforce.
+				</td>
+			</tr>
+			<tr>
+				<td>
+				Please find the Lead details below:
+				</td>
+			</tr>
+
+			<tr>
+				<td><b> Title: <span th:text="${lealFirstName}"></span><br/> 
+						Crm Id: <span th:text="${leadCRMID}"></span><br />
+						Lead Id: <span th:text="${leadId}"></span><br />
+						Lead Email: <span th:text="${leadEmail}"></span><br/>
+						Partner Company Name: <span th:text="${partnerCompanyName}"></span><br/>
+						Partner Email: <span th:text="${partnerEmail}"></span><br/>
+				</b></td>
+			</tr>
+
+			
+			<tr>
+				<td style="font-family: Century Gothic; font-size: 14px;"><br />
+					Best Regards,<br /> The xAmplify Team</td>
+			</tr>
+
+		</tbody>
+	</table>
+</body>
+</html>

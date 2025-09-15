@@ -1,0 +1,5 @@
+package com.xtremand.social.constants;
+
+public enum SocialConstants {
+	GOOGLE_ACCESS_TOKEN, GOOGLE_REFRESH_TOKEN, SALESFORCE_ACCESS_TOKEN, SALESFORCE_REFRESH_TOKEN, ZOHO_AUTH_TOKEN
+}

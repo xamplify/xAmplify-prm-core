@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+<head>
+<META http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<style>
+* {
+	font-size: 100%;
+	font-family: Century Gothic;
+}
+
+body {
+	font-family: Century Gothic;
+	background-color: #fff;
+	text-align: center
+}
+
+table {
+	border: 1px solid #dedede;
+	padding: 1em 3em;
+	align: center;
+	width: 600px;
+}
+
+td {
+	font-size: 13px;
+	line-height: 24px;
+	padding: 15px 40px
+}
+
+p {
+	color: black;
+}
+
+.button {
+	background-color: #009bd9; /* blue */
+	border: none;
+	color: white !important;
+	text-align: center;
+	padding: 5px 30px;
+	border-radius: 5px;
+	text-decoration: none;
+	display: inline-block;
+	font-size: 16px;
+	font-family: Century Gothic;
+	cursor: pointer !important;
+}
+</style>
+</head>
+<body >
+	<table align="center">
+		<tbody>
+			<tr>
+				<td align="center"><a th:href="${targetURL}" target="_blank">
+
+				</a></td>
+			</tr>
+
+			<tr >
+				<td align="center"><img th:src="${headerImage}" alt="" height="100"
+					width="100" />
+
+					<p align="left">
+						Hi <span th:text="${welcomeDisplayName}"></span>,
+					</p>
+					<p align="center" style="font-size: 25px">Your Report is Ready.
+					</p>
+					<p style="font-size: 15px; font-weight: 600;">Thanks for
+						requesting the High-Level Analytics report.</p> <a
+					th:href="${filePath}" class="button" style="cursor: pointer;">
+						Download Report </a>
+					<p style="margin-bottom: 0px; font-size: 19px; font-weight: 550;">Download
+						Link</p> <a th:href="${filePath}"> <span th:text="${filePath}"></span>
+				</a><br />
+				<b>Requested On :</b><span
+					th:text="${requestedOn}"></span>
+					<p align="left">The xAmplify Team</p></td>
+			</tr>
+		</tbody>
+	</table>
+</body>
+</html>

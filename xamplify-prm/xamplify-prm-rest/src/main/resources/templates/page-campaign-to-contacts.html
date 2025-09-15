@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+<META http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<style>
+body{font-family: Century Gothic; background-color: #fff;text-align: center}
+table{border:1px solid #dedede;padding:1em 3em;align:center;width:600px;}
+td{font-size: 13px; line-height: 24px; padding: 15px 40px}
+#font-family{
+font-family:Century Gothic;font-size:14px
+}
+
+</style>    
+</head>
+<body>
+<table align="center">
+    <tbody>
+        <tr>
+        <td align="center">
+            <a th:href="${loginUrl}" target="_blank"> 
+            <img src="https://xamplify.io/assets/images/xamplify-logo.png" alt="https://xamplify.io/assets/images/xamplify-logo.png" width="145" align="center"/>
+            </a>
+        </td>
+        </tr>
+        <tr>
+            <td id="font-family">
+                <p>Hi <span th:text="${receiverFullName}"></span>,</p>
+            </td>
+        </tr>
+        <tr>
+            <td id="font-family">
+              We are pleased to let you know that we have shared a page with you.Please click on the below link to see.
+              </td>
+        </tr>
+
+        <tr>
+        	<td align="center" style="padding: 2em 0;"><a th:href="${pageLink}" target="_blank" style="color: #fff;background-color: #0943e5;text-decoration: none;padding: 10px 40px;">Click Here</a></td>
+        </tr>
+         <!-- Spacer --> 
+            <tr> 
+             <td style="padding: 10px 0 0 0;font-size: 0;line-height: 0;"> &nbsp; </td> 
+            </tr> 
+            <!-- End Spacer --> 
+        <tr> 
+             <td style="font-family:Century Gothic;font-size:14px;line-height:20px;">Here’s to our continued success,<br/><br/><span th:text="${senderFirstName}"></span> <span th:text="${senderLastName}"></span><br/><b><span th:text="${senderCompanyName}"></span></b></td>
+            </tr>	
+            <tr th:if="${unsubscribeStatus}">
+			<td>
+				If you'd like to unsubscribe and stop receiving these emails <a th:href="@{${unsubscribeURL}}">click here</a>
+			</td>
+		</tr>
+		<tr>
+			<td>
+				<img th:src="@{${trackingURL}}" class='backup_picture' style='display: none' />
+			</td>
+		</tr>
+    </tbody>
+</table>
+</body>
+</html>

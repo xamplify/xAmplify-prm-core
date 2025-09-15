@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+<META http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<style>
+* { font-size: 100%; font-family: Century Gothic;}
+body{font-family: Century Gothic; background-color: #fff;text-align: center}
+table{border:1px solid #dedede;padding:1em 3em;align:center;width:600px;}
+td{font-size: 13px; line-height: 24px; padding: 15px 40px}
+</style>    
+</head>
+<body>
+<table align="center">
+    <tbody>
+        <tr>
+        <td align="center">
+            <a href="https://xamplify.io/login" target="_blank"> 
+            <img src="https://xamplify.io/assets/images/xamplify-logo.png" alt="https://xamplify.io/assets/images/xamplify-logo.png" width="145" align="center"/>
+            </a>
+        </td>
+        </tr>
+        <tr>
+            <td>
+                <p>Hi <span th:text="${toName} ?: 'there'"></span>,</p>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                We’re here to inform that <span th:text="${moduleType == 'Asset'} ? 'an': 'a'"></span> <span th:text="${moduleType} ?: 'item'"></span> has been <span th:text="${status} ?: ' '"></span> by the admin(s).</td>
+        </tr>
+		<tr>
+            <td>
+                Please find the details below</td>
+        </tr>
+        <tr>
+           <td>
+	            <b>
+	                <span th:text="${moduleType} ?: 'item'"></span> Name: <span th:text="${name} ?: '---'"></span><br/>
+					Updated by: <span th:text="${updatedByName} ?: '---'"></span><br/>
+	                Status: <span th:text="${status} ?: '---'"></span><br/>
+	                Comment: <span th:text="${comment} ?: '---'"></span><br/>
+	            </b>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                We hope to be in touch with you again soon,
+            </td>
+        </tr>
+        <tr>
+            <td>
+                The xAmplify Team<br/><br/>
+            </td>
+        </tr>
+    </tbody>
+</table>
+</body>
+</html>

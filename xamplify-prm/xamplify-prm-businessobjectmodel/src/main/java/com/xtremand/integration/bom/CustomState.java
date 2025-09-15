@@ -1,0 +1,39 @@
+package com.xtremand.integration.bom;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.persistence.SequenceGenerator;
+import javax.persistence.Table;
+
+import lombok.Getter;
+import lombok.Setter;
+
+@Getter
+@Setter
+@Entity
+@Table(name="xt_crm_custom_state")
+public class CustomState {
+	
+	@Id
+	@GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "xt_crm_custom_state_sequence")
+	@SequenceGenerator(name = "xt_crm_custom_state_sequence", sequenceName = "xt_crm_custom_state_sequence", allocationSize = 1)
+	private Integer id;
+	
+	
+	@Column(name = "choice_name")
+	private String choiceName;
+
+	@Column(name = "choice_id")
+	private String choiceId;
+	
+	
+	@ManyToOne
+	@JoinColumn(name = "country_id")
+	private CustomCountry countryId;
+
+}

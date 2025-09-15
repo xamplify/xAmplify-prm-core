@@ -1,0 +1,469 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<configuration>
+
+	<!-- <property resource="application.properties" /> -->
+
+	<define name="hostname"
+		class="ch.qos.logback.core.property.CanonicalHostNamePropertyDefiner" />
+	<contextName>${HOSTNAME}</contextName>
+
+	<turboFilter
+		class="ch.qos.logback.classic.turbo.DuplicateMessageFilter">
+		<AllowedRepetitions>0</AllowedRepetitions>
+	</turboFilter>
+	<property name="DEV_HOME"
+		value="${catalina.home}/xamplify-logs/" />
+
+	<property name="LOGS_PATTERN"
+		value="%X{requestId} %contextName - - %date [%thread] %-5level [%file:%line] - %msg%n%ex{full}" />
+
+	<property name="STDOUT_LOG_PATTERN"
+		value=" %date [%thread] [%file:%line]  %msg%n%ex{full}"></property>
+	<property name="MAX_DAYS_BACK_UP" value="90"></property>
+	<!-- dump status message on the console as they arrive -->
+	<appender name="STDOUT"
+		class="ch.qos.logback.core.ConsoleAppender">
+		<encoder>
+			<pattern>${STDOUT_LOG_PATTERN}</pattern>
+		</encoder>
+	</appender>
+
+	<appender name="FILE-AUDIT"
+		class="ch.qos.logback.core.rolling.RollingFileAppender">
+		<file>${DEV_HOME}/debug.log</file>
+		<encoder
+			class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+			<Pattern>
+				${LOGS_PATTERN}
+			</Pattern>
+		</encoder>
+
+		<rollingPolicy
+			class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+			<!-- rollover daily -->
+			<fileNamePattern>${DEV_HOME}/archived/debug.%d{yyyy-MM-dd}.%i.log
+			</fileNamePattern>
+			<timeBasedFileNamingAndTriggeringPolicy
+				class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
+				<maxFileSize>10MB</maxFileSize>
+			</timeBasedFileNamingAndTriggeringPolicy>
+
+			<maxHistory>${MAX_DAYS_BACK_UP}</maxHistory>
+		</rollingPolicy>
+
+	</appender>
+
+	<appender name="LOG-SERVICE-IMPL-AUDIT"
+		class="ch.qos.logback.core.rolling.RollingFileAppender">
+		<file>${DEV_HOME}/log-service-impl.log</file>
+		<encoder
+			class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+			<Pattern>
+				${LOGS_PATTERN}
+			</Pattern>
+		</encoder>
+
+		<rollingPolicy
+			class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+			<!-- rollover daily -->
+			<fileNamePattern>${DEV_HOME}/archived/log-service-impl.%d{yyyy-MM-dd}.%i.log
+			</fileNamePattern>
+			<timeBasedFileNamingAndTriggeringPolicy
+				class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
+				<maxFileSize>10MB</maxFileSize>
+			</timeBasedFileNamingAndTriggeringPolicy>
+
+			<maxHistory>${MAX_DAYS_BACK_UP}</maxHistory>
+		</rollingPolicy>
+
+	</appender>
+
+
+
+	<appender name="FILE-ERROR"
+		class="ch.qos.logback.core.rolling.RollingFileAppender">
+		<file>${DEV_HOME}/error.log</file>
+		<encoder
+			class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+			<Pattern>
+				${LOGS_PATTERN}
+			</Pattern>
+		</encoder>
+
+		<rollingPolicy
+			class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+			<!-- rollover daily -->
+			<fileNamePattern>${DEV_HOME}/archived/error.%d{yyyy-MM-dd}.%i.log
+			</fileNamePattern>
+			<timeBasedFileNamingAndTriggeringPolicy
+				class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
+				<maxFileSize>10MB</maxFileSize>
+			</timeBasedFileNamingAndTriggeringPolicy>
+
+			<maxHistory>${MAX_DAYS_BACK_UP}</maxHistory>
+		</rollingPolicy>
+	</appender>
+
+
+	<appender name="PARTNERSHIP-LOGS"
+		class="ch.qos.logback.core.rolling.RollingFileAppender">
+		<file>${DEV_HOME}/partnership.log</file>
+		<encoder
+			class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+			<Pattern>
+				${LOGS_PATTERN}
+			</Pattern>
+		</encoder>
+		<rollingPolicy
+			class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+			<!-- rollover daily -->
+			<fileNamePattern>${DEV_HOME}/archived/partnership.%d{yyyy-MM-dd}.%i.log
+			</fileNamePattern>
+			<timeBasedFileNamingAndTriggeringPolicy
+				class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
+				<maxFileSize>10MB</maxFileSize>
+			</timeBasedFileNamingAndTriggeringPolicy>
+
+			<maxHistory>${MAX_DAYS_BACK_UP}</maxHistory>
+		</rollingPolicy>
+	</appender>
+
+
+
+	<logger name="com.xtremand.mail.service" level="debug"
+		additivity="false">
+		<appender-ref ref="FILE-AUDIT" />
+		<appender-ref ref="STDOUT" />
+	</logger>
+
+
+	<logger name="com.xtremand.log.service.impl" level="debug"
+		additivity="false">
+		<appender-ref ref="LOG-SERVICE-IMPL-AUDIT" />
+		<appender-ref ref="STDOUT" />
+	</logger>
+
+
+	<logger name="com.xtremand.user.service.impl" level="debug"
+		additivity="false">
+		<appender-ref ref="ACCOUNT-ACTIVATION-AUDIT" />
+		<appender-ref ref="STDOUT" />
+	</logger>
+
+	<logger name="com.xtremand.util.service" level="debug"
+		additivity="false">
+		<appender-ref ref="PAGE-CAMPAIGN-LOGS" />
+		<appender-ref ref="STDOUT" />
+	</logger>
+
+	<logger name="com.xtremand.team.service.impl" level="debug"
+		additivity="false">
+		<appender-ref ref="STDOUT" />
+	</logger>
+
+	<logger name="com.xtremand.team.dao.hibernate" level="debug"
+		additivity="false">
+		<appender-ref ref="STDOUT" />
+	</logger>
+
+	<logger name="com.xtremand.partnership.service.impl"
+		level="debug" additivity="false">
+		<appender-ref ref="STDOUT" />
+		<appender-ref ref="PARTNERSHIP-LOGS" />
+	</logger>
+
+
+	<logger name="com.xtremand.dam.dao.hibernate.HibernateDamDao"
+		level="debug" additivity="false">
+		<appender-ref ref="STDOUT" />
+	</logger>
+
+	<logger
+		name="com.xtremand.util.dao.HibernateSQLQueryResultUtilDao"
+		level="debug" additivity="false">
+		<appender-ref ref="STDOUT" />
+	</logger>
+
+
+
+	<!-- Form Submit -->
+	<appender name="FORM-SUBMIT"
+		class="ch.qos.logback.core.rolling.RollingFileAppender">
+		<file>${DEV_HOME}/form-submit.log
+		</file>
+		<encoder
+			class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+			<Pattern>
+				${LOGS_PATTERN}
+			</Pattern>
+		</encoder>
+		<rollingPolicy
+			class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+			<!-- rollover daily -->
+			<fileNamePattern>${DEV_HOME}/archived/form-submit.%d{yyyy-MM-dd}.%i.log
+			</fileNamePattern>
+			<timeBasedFileNamingAndTriggeringPolicy
+				class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
+				<maxFileSize>10MB</maxFileSize>
+			</timeBasedFileNamingAndTriggeringPolicy>
+			<maxHistory>${MAX_DAYS_BACK_UP}</maxHistory>
+		</rollingPolicy>
+	</appender>
+
+	<logger
+		name="com.xtremand.form.submit.service.impl.FormSubmitServiceImpl"
+		level="debug" additivity="false">
+		<appender-ref ref="STDOUT" />
+		<appender-ref ref="FORM-SUBMIT" />
+	</logger>
+	<!-- End Of Form Submit -->
+
+
+	<!-- Publishing Content -->
+	<appender name="CONTENT-SERVICE"
+		class="ch.qos.logback.core.rolling.RollingFileAppender">
+		<file>${DEV_HOME}/content-service.log
+		</file>
+		<encoder
+			class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+			<Pattern>
+				${LOGS_PATTERN}
+			</Pattern>
+		</encoder>
+		<rollingPolicy
+			class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+			<!-- rollover daily -->
+			<fileNamePattern>${DEV_HOME}/archived/content-service.%d{yyyy-MM-dd}.%i.log
+			</fileNamePattern>
+			<timeBasedFileNamingAndTriggeringPolicy
+				class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
+				<maxFileSize>10MB</maxFileSize>
+			</timeBasedFileNamingAndTriggeringPolicy>
+			<maxHistory>${MAX_DAYS_BACK_UP}</maxHistory>
+		</rollingPolicy>
+	</appender>
+
+	<logger name="com.xtremand.content.service.ContentService"
+		level="debug" additivity="false">
+		<appender-ref ref="STDOUT" />
+		<appender-ref ref="CONTENT-SERVICE" />
+	</logger>
+	<!-- Publishing Content -->
+
+	<!-- -User List Service -->
+	<appender name="USER-LIST-SERVICE"
+		class="ch.qos.logback.core.rolling.RollingFileAppender">
+		<file>${DEV_HOME}/user-list-service.log
+		</file>
+		<encoder
+			class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+			<Pattern>
+				${LOGS_PATTERN}
+			</Pattern>
+		</encoder>
+		<rollingPolicy
+			class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+			<!-- rollover daily -->
+			<fileNamePattern>${DEV_HOME}/archived/user-list-service.%d{yyyy-MM-dd}.%i.log
+			</fileNamePattern>
+			<timeBasedFileNamingAndTriggeringPolicy
+				class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
+				<maxFileSize>10MB</maxFileSize>
+			</timeBasedFileNamingAndTriggeringPolicy>
+			<maxHistory>${MAX_DAYS_BACK_UP}</maxHistory>
+		</rollingPolicy>
+	</appender>
+
+	<logger
+		name="com.xtremand.userlist.service.impl.UserListServiceImpl"
+		level="debug" additivity="false">
+		<appender-ref ref="STDOUT" />
+		<appender-ref ref="USER-LIST-SERVICE" />
+	</logger>
+
+	<!-- -Export Util -->
+	<appender name="EXPORT-UTIL"
+		class="ch.qos.logback.core.rolling.RollingFileAppender">
+		<file>${DEV_HOME}/export-util.log
+		</file>
+		<encoder
+			class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+			<Pattern>
+				${LOGS_PATTERN}
+			</Pattern>
+		</encoder>
+		<rollingPolicy
+			class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+			<!-- rollover daily -->
+			<fileNamePattern>${DEV_HOME}/archived/export-util.%d{yyyy-MM-dd}.%i.log
+			</fileNamePattern>
+			<timeBasedFileNamingAndTriggeringPolicy
+				class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
+				<maxFileSize>10MB</maxFileSize>
+			</timeBasedFileNamingAndTriggeringPolicy>
+			<maxHistory>${MAX_DAYS_BACK_UP}</maxHistory>
+		</rollingPolicy>
+	</appender>
+
+	<logger name="com.xtremand.util.ExportUtil" level="debug"
+		additivity="false">
+		<appender-ref ref="STDOUT" />
+		<appender-ref ref="EXPORT-UTIL" />
+	</logger>
+
+
+	<!-- Util Service Non Transactional -->
+	<appender name="UTIL-NON-TRANSACTIONAL"
+		class="ch.qos.logback.core.rolling.RollingFileAppender">
+		<file>${DEV_HOME}/util-non-transactional.log
+		</file>
+		<encoder
+			class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+			<Pattern>
+				${LOGS_PATTERN}
+			</Pattern>
+		</encoder>
+		<rollingPolicy
+			class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+			<!-- rollover daily -->
+			<fileNamePattern>${DEV_HOME}/archived/util-non-transactiona.%d{yyyy-MM-dd}.%i.log
+			</fileNamePattern>
+			<timeBasedFileNamingAndTriggeringPolicy
+				class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
+				<maxFileSize>10MB</maxFileSize>
+			</timeBasedFileNamingAndTriggeringPolicy>
+			<maxHistory>${MAX_DAYS_BACK_UP}</maxHistory>
+		</rollingPolicy>
+	</appender>
+	<logger
+		name="com.xtremand.util.service.UtilServiceWithOutTransactional"
+		level="debug" additivity="false">
+		<appender-ref ref="STDOUT" />
+		<appender-ref ref="UTIL-NON-TRANSACTIONAL" />
+	</logger>
+
+	<!-- -Generic Dao -->
+	<appender name="GENERIC-DAO"
+		class="ch.qos.logback.core.rolling.RollingFileAppender">
+		<file>${DEV_HOME}/generic-dao.log
+		</file>
+		<encoder
+			class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+			<Pattern>
+				${LOGS_PATTERN}
+			</Pattern>
+		</encoder>
+		<rollingPolicy
+			class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+			<!-- rollover daily -->
+			<fileNamePattern>${DEV_HOME}/archived/generic-dao.%d{yyyy-MM-dd}.%i.log
+			</fileNamePattern>
+			<timeBasedFileNamingAndTriggeringPolicy
+				class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
+				<maxFileSize>10MB</maxFileSize>
+			</timeBasedFileNamingAndTriggeringPolicy>
+			<maxHistory>${MAX_DAYS_BACK_UP}</maxHistory>
+		</rollingPolicy>
+	</appender>
+
+	<logger name="com.xtremand.dao.util.GenericDAO" level="debug"
+		additivity="false">
+		<appender-ref ref="STDOUT" />
+		<appender-ref ref="GENERIC-DAO" />
+	</logger>
+
+
+
+	<logger name="com.xtremand.util.dao.XamplifyUtilDao"
+		level="debug" additivity="false">
+		<appender-ref ref="STDOUT" />
+	</logger>
+
+	<logger name="com.xtremand.util.dao.ExceptionHandlerUtil"
+		level="debug" additivity="false">
+		<appender-ref ref="STDOUT" />
+	</logger>
+
+	<logger name="com.xtremand.lms.dao.hibernate" level="debug"
+		additivity="false">
+		<appender-ref ref="STDOUT" />
+	</logger>
+
+	<!-- -DASHBOARD-BUTTONS-ASYNC-SERVICE -->
+	<appender name="DASHBOARD-BUTTONS-ASYNC-SERVICE"
+		class="ch.qos.logback.core.rolling.RollingFileAppender">
+		<file>${DEV_HOME}/dashboard-buttons-async-service.log
+		</file>
+		<encoder
+			class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+			<Pattern>
+				${LOGS_PATTERN}
+			</Pattern>
+		</encoder>
+		<rollingPolicy
+			class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+			<!-- rollover daily -->
+			<fileNamePattern>${DEV_HOME}/archived/dashboard-buttons-async-service.%d{yyyy-MM-dd}.%i.log
+			</fileNamePattern>
+			<timeBasedFileNamingAndTriggeringPolicy
+				class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
+				<maxFileSize>10MB</maxFileSize>
+			</timeBasedFileNamingAndTriggeringPolicy>
+			<maxHistory>${MAX_DAYS_BACK_UP}</maxHistory>
+		</rollingPolicy>
+	</appender>
+
+	<logger
+		name="com.xtremand.dashboard.button.service.DashboardButtonsAsyncService"
+		level="debug" additivity="false">
+		<appender-ref ref="STDOUT" />
+		<appender-ref ref="DASHBOARD-BUTTONS-ASYNC-SERVICE" />
+	</logger>
+
+
+
+
+
+
+	<!-- -Super Admin Logs -->
+	<appender name="SUPER-ADMIN-LOGGER"
+		class="ch.qos.logback.core.rolling.RollingFileAppender">
+		<file>${DEV_HOME}/super-admin/super-admin.log
+		</file>
+		<encoder
+			class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+			<Pattern>
+				${LOGS_PATTERN}
+			</Pattern>
+		</encoder>
+		<rollingPolicy
+			class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+			<!-- rollover daily -->
+			<fileNamePattern>${DEV_HOME}/archived/super-admin/super-admin.%d{yyyy-MM-dd}.%i.log
+			</fileNamePattern>
+			<timeBasedFileNamingAndTriggeringPolicy
+				class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
+				<maxFileSize>10MB</maxFileSize>
+			</timeBasedFileNamingAndTriggeringPolicy>
+			<maxHistory>${MAX_DAYS_BACK_UP}</maxHistory>
+		</rollingPolicy>
+	</appender>
+
+	<logger name="com.xtremand.superadmin" level="debug"
+		additivity="false">
+		<appender-ref ref="STDOUT" />
+		<appender-ref ref="SUPER-ADMIN-LOGGER" />
+	</logger>
+
+
+
+	<root level="error" additivity="false">
+		<appender-ref ref="FILE-ERROR" />
+		<appender-ref ref="STDOUT" />
+	</root>
+
+
+
+
+</configuration>

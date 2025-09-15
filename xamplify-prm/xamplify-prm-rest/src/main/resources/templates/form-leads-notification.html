@@ -1,0 +1,78 @@
+<!-- Send Email to sales persons when someone requested for a demo -->
+<!DOCTYPE html>
+<html>
+<head>
+<META http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<style>
+* { font-size: 100%; font-family: Century Gothic;}
+body{font-family: Century Gothic; background-color: #fff;text-align: center}
+table{border:1px solid #dedede;padding:1em 3em;align:center;width:600px;}
+td{font-size: 13px; line-height: 24px; padding: 15px 40px}
+
+</style>    
+</head>
+<body>
+<table align="center">
+    <tbody>
+        <tr>
+        <td align="center">
+            <img src="https://xamplify.io/assets/images/xamplify-logo.png" alt="https://xamplify.io/assets/images/xamplify-logo.png" width="145" align="center"/>
+        </td>
+        </tr>
+        <tr>
+            <td>
+                <p>Hi <span th:text="${formLeadsNotification.firstName} ?: 'there'"></span>,</p>
+            </td>
+        </tr>
+        <tr>
+            <td>We wanted to be the first to tell you that someone has completed one of your forms.</td>
+        </tr>
+		<tr>
+			<td>Here's a sneak peek:</td>
+		</tr>
+
+        <tr>
+            <td>
+	            <b> Form Name: <span th:text="${formLeadsNotification.formName}"></span><br/>
+	            	<section  th:if="${formLeadsNotification.landingPageFormLead}">
+	            		 Page Name: <span  th:text="${formLeadsNotification.landingPageName}"></span><br/>
+	            	</section>
+	            	<section  th:if="${formLeadsNotification.partnerLandingPageFormLead}">
+	            		 Page Name: <span  th:text="${formLeadsNotification.landingPageName}"></span><br/>
+	            		 Company Name: <span  th:text="${formLeadsNotification.partnerCompanyName}"></span><br/>
+	            	</section>
+	            	<section  th:if="${formLeadsNotification.eventCampaignFormLead}">
+	            		 Campaign Name: <span  th:text="${formLeadsNotification.campaignName}"></span><br/>
+	            	</section>
+	            </b>
+            </td>
+        </tr>
+		
+		<tr>
+		<td>
+		<table border="1">
+		  <tr th:each="submittedData : ${formLeadsNotification.submittedDetails}">
+			<th>
+			<span  th:text="${submittedData.labelName}">
+			</span>
+			</th>
+			<td><span  th:text="${submittedData.labelValue}"></span></td>
+		  </tr>
+		</table>
+		</td>
+		</tr>
+        <tr>
+			<td align="center" style="padding: 2em 0;">
+			<a th:href="${formLeadsNotification.formAnalyticsUrl}" target="_blank" style="color: #fff;background-color: #0943e5;text-decoration: none;padding: 10px 40px;">Login</a></td>
+		</tr>
+		
+		<tr>
+			<td>Until next time, <br/>
+			 The xAmplify Team<br/><br/>
+			</td>
+		</tr>
+       
+    </tbody>
+</table>
+</body>
+</html>

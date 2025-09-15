@@ -1,0 +1,59 @@
+<!-- Send Email when partner makes a contact as a lead. Vendor will receive a notification email -->
+<!DOCTYPE html>
+<html>
+<head>
+<META http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<style>
+* { font-size: 100%; font-family: Century Gothic;}
+body{font-family: Century Gothic; background-color: #fff;text-align: center}
+table{border:1px solid #dedede;padding:1em 3em;align:center;width:600px;}
+td{font-size: 13px; line-height: 24px; padding: 15px 40px}
+</style>    
+</head>
+<body>
+<table align="center">
+    <tbody>
+        <tr>
+        <td align="center">
+            <a href="https://xamplify.io/login" target="_blank"> 
+            <img src="https://xamplify.io/assets/images/xamplify-logo.png" alt="https://xamplify.io/assets/images/xamplify-logo.png" width="145" align="center"/>
+            </a>
+        </td>
+        </tr>
+        <tr>
+            <td>
+                <p>Hi <span th:text="${toName} ?: 'there'"></span>,</p>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                We’re here to inform that a lead has been <span th:text="${approveOrReject} ?: ' '"></span> by the below Company.</td>
+        </tr>
+
+        <tr>
+           <td>
+	            <b> <!-- <span th:text="${approveOrReject == 'approved'} ? 'Approved ' : 'Rejected '"></span>by Name: <span th:text="${vendorName}"></span><br/> -->
+	                <span th:text="${approveOrReject == 'approved'} ? 'Approved ' : 'Rejected '"></span>by Company: <span th:text="${vendorCompanyName}"></span><br/> 
+	                Lead Name: <span th:text="${lead.firstName}? ${lead.firstName} + ' ' + ${lead.lastName}: ${lead.lastName}">Lead Name</span><br/>
+	                Lead Company: <span th:text="${lead.company} ? ${lead.company} : '---'">Lead Company</span><br/>
+	                Associated Campaign: <span th:text="${lead.campaign} ? ${lead.campaign.campaign} : '---'">Associated Campaign</span><br/>
+	                Stage: <span th:text="${lead.currentStage.stageName} ? ${lead.currentStage.stageName} : '---'">Stage</span><br/>
+	                <span th:text="${approveOrReject == 'approved'} ? 'Approved ' : 'Rejected '"></span>Comment: <span th:text="${lead.approvalStatusComment} ? ${lead.approvalStatusComment} : '---'">Comment</span><br/>
+	            </b>
+            </td>
+        </tr>
+
+        <tr>
+            <td>
+                We hope to be in touch with you again soon,
+            </td>
+        </tr>
+        <tr>
+            <td>
+                The xAmplify Team<br/><br/>
+            </td>
+        </tr>
+    </tbody>
+</table>
+</body>
+</html>

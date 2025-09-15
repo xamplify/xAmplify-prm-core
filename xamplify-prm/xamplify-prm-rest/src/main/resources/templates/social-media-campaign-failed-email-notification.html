@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+<meta charset="UTF-8" />
+<title>Social Campaign</title>
+<style>
+td {
+	font-family: Century Gothic;
+	font-size: 14px;
+	padding: 1em 0
+}
+
+table {
+	border: 1px solid #dedede;
+	padding: 1em 3em;
+	align: center;
+	width: 600px;
+	background-color: #fff
+}
+
+h6 {
+	font-size: 11px;
+	font-weight: 400
+}
+
+p {
+	margin: 10px
+}
+
+h5 {
+	margin: auto
+}
+
+hr {
+	margin: 20px;
+	border: 1px solid #f1f1f1
+}
+
+.error {
+	color: red;
+	text-align: center;
+}
+</style>
+</head>
+<body>
+	<div style="background-color: #fafafa">
+		<table align="center">
+			<tr>
+				<td align="center" style="padding: 2em;"><a
+					href="javascript:void(0)"> <img th:src="${companyLogo}"
+						height="80" /></a></td>
+			</tr>
+			<tr>
+				<td>
+					<p>
+						Hi <span th:text="${welcomeDisplayName}"></span>,
+					</p>
+					<p>
+						<span th:text="${emailHeader}"></span>
+					</p>
+				</td>
+			</tr>
+			<tr>
+				<td>
+					<p>
+						Campaign Name : <strong><span th:text="${campaignName}"></span></strong>
+					</p>
+				</td>
+			</tr>
+			<tr>
+				<td>
+
+					<table border="1">
+						<tr>
+							<th>Social Media Service</th>
+							<th>Reason</th>
+						</tr>
+
+						<tr th:each="socialStatus: ${socialStatusList}">
+							<th><span
+								th:text="${socialStatus?.socialStatusProvider?.socialConnection?.source}">
+							</span></th>
+							<td class="error"><span
+								th:text="${socialStatus?.publishMessage}"></span></td>
+						</tr>
+
+					</table>
+
+				</td>
+			</tr>
+
+			<tr>
+				<td><b>Best regards,</b><br /> <span>xAmplify</span></td>
+			</tr>
+
+		</table>
+	</div>
+</body>
+</html>
