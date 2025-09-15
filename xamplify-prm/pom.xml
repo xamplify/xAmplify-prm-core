@@ -13,8 +13,8 @@
 		<module>xamplify-prm-utils</module>
 		<module>xamplify-prm-security</module>
 		<module>xamplify-prm-businessobjectmodel</module>
-		<module>xamplify-prm-rest</module>
-	</modules>
+                <module>xamplify-prm-api</module>
+        </modules>
 	<organization>
 		<name>xAmplify</name>
 		<url>https://xamplify.com</url>
