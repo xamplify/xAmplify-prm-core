@@ -1,6 +1,6 @@
 # xAmplify PRM — Backend (Spring Boot / Java 8)
 
-> **Server-side APIs** for the open‑source PRM: partner onboarding, deals/opportunities, MDF, content(DAM,Tracks,Playbooks), dashboards, and more.
+> **Server-side APIs** for the open‑source PRM: partner onboarding, deals/opportunities, MDF, content(DAM,Tracks,Playbooks), dashboards,buttons and more.
 
 - Runtime: **Java 8 (JDK 1.8)**
 - Build: **Maven 3.6.3**
