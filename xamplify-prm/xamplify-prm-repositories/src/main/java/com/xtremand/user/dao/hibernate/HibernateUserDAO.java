@@ -1259,7 +1259,12 @@ public class HibernateUserDAO implements UserDAO {
 				+ "where up.company_id = cp.company_id and up.user_id = ur.user_id and ur.role_id = "
 				+ Role.PRM_ROLE.getRoleId();
 		Query query = session.createSQLQuery(sqlString);
-		return (String) query.uniqueResult();
+		String companyProfileName = (String) query.uniqueResult();
+		if (StringUtils.hasText(companyProfileName)) {
+			return companyProfileName;
+		} else {
+			return "xamplify-prm";
+		}
 	}
 
 	@Override

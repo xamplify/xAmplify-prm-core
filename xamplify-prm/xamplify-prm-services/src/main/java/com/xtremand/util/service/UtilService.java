@@ -4054,25 +4054,25 @@ public class UtilService {
 
 		List<Theme> themes = new ArrayList<Theme>();
 
-		createTheme(company, userId, "Glassomorphism Dark", "Glassomorphism Dark", 195,
-				"assets/images/theme/Final/glassomorphism-dark.webp", Theme.ThemeStatus.GLASSMORPHISMDARK,
-				"/assets/images/glassmorphism-images/glassomorphism-dark.jpg", themes);
-
-		createTheme(company, userId, "Glassomorphism Light", "Glassomorphism Light", 196,
-				"assets/images/theme/Final/glassomorphism-light.webp", Theme.ThemeStatus.GLASSMORPHISMLIGHT,
-				"/assets/images/glassmorphism-images/glassomorphism.png", themes);
-
 		createTheme(company, userId, "Light", "Default or Light Theme", 1,
 				"assets/images/theme/Final/light-theme-custom.webp", Theme.ThemeStatus.LIGHT, null, themes);
 
-		createTheme(company, userId, "Neumorphism Dark", "Neumorphism Dark", 4,
-				"assets/images/theme/Final/dark-theme-custom.webp", Theme.ThemeStatus.NEUMORPHISMDARK, null, themes);
+		createTheme(company, userId, "Dark", "Dark Theme", 2, "assets/images/theme/Final/dark-theme-custom.webp",
+				Theme.ThemeStatus.DARK, null, themes);
 
 		createTheme(company, userId, "Neumorphism Light", "Neumorphism Light", 3,
 				"assets/images/theme/Final/light-theme-custom.webp", Theme.ThemeStatus.NEUMORPHISMLIGHT, null, themes);
 
-		createTheme(company, userId, "Dark", "Dark Theme", 2, "assets/images/theme/Final/dark-theme-custom.webp",
-				Theme.ThemeStatus.DARK, null, themes);
+		createTheme(company, userId, "Neumorphism Dark", "Neumorphism Dark", 4,
+				"assets/images/theme/Final/dark-theme-custom.webp", Theme.ThemeStatus.NEUMORPHISMDARK, null, themes);
+
+		createTheme(company, userId, "Glassomorphism Light", "Glassomorphism Light", 5,
+				"assets/images/theme/Final/glassomorphism-light.webp", Theme.ThemeStatus.GLASSMORPHISMLIGHT,
+				"/assets/images/glassmorphism-images/glassomorphism.png", themes);
+
+		createTheme(company, userId, "Glassomorphism Dark", "Glassomorphism Dark", 6,
+				"assets/images/theme/Final/glassomorphism-dark.webp", Theme.ThemeStatus.GLASSMORPHISMDARK,
+				"/assets/images/glassmorphism-images/glassomorphism-dark.jpg", themes);
 
 		hibernateSQLQueryResultUtilDao.saveAll(themes);
 		String debugMessage = "Themes Added Successfully";
@@ -4084,6 +4084,7 @@ public class UtilService {
 			String themeImagePath, Theme.ThemeStatus parentThemeName, String backgroundImage, List<Theme> themes) {
 
 		Theme theme = new Theme();
+		theme.setId(parentId);
 		theme.setCompanyProfile(company);
 		theme.setName(name);
 		theme.setDescription(description);

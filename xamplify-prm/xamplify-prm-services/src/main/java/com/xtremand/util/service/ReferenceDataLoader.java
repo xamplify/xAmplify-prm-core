@@ -5,6 +5,7 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.stereotype.Service;
@@ -30,9 +31,12 @@ public class ReferenceDataLoader implements ApplicationListener<ContextRefreshed
 
 	@Autowired
 	GenericDAO genericDao;
+	
+	@Value("${spring.profiles.active}")
+	private String profiles;
 
 	public void init() {
-		logger.info("loader started");
+		logger.info("Application Loaded With Profile : "+profiles);
 
 		genericDao.load(Role.class);
 		logger.info("Roles loaded");
