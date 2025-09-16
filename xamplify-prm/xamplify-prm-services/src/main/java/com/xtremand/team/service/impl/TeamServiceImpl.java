@@ -16,7 +16,6 @@ import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletResponse;
 
 import org.hibernate.HibernateException;
-import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -581,22 +580,9 @@ public class TeamServiceImpl implements TeamService {
 
 	/**** XNFR-454 ****/
 	private void validateEmailAddress(User teamMemberUser) throws IOException {
-		JSONObject jsonObject = emailValidatorService.validate(teamMemberUser.getEmailId().trim().toLowerCase(), null,
-				"", 1, 1);
-		if (jsonObject.has(ERROR)
-				&& jsonObject.getString(ERROR).equalsIgnoreCase("Invalid API Key or your account ran out of credits")) {
-			teamMemberUser.setEmailValid(false);
-			teamMemberUser.setEmailValidationInd(false);
-		} else if (jsonObject.has(ERROR)) {
-			teamMemberUser.setEmailValid(false);
-			teamMemberUser.setEmailValidationInd(true);
-			teamMemberUser.setEmailCategory("invalid");
-		} else {
-			String status = jsonObject.getString("status");
-			teamMemberUser.setEmailValid((status.equalsIgnoreCase("valid") || status.equalsIgnoreCase("catch-all")));
-			teamMemberUser.setEmailValidationInd(true);
-			teamMemberUser.setEmailCategory(status);
-		}
+		teamMemberUser.setEmailValid(true);
+		teamMemberUser.setEmailValidationInd(true);
+		teamMemberUser.setEmailCategory("valid");
 	}
 
 	private void addRoles(List<Integer> roleIds, User user, boolean secondAdmin, Integer userId) {

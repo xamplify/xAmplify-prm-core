@@ -483,6 +483,9 @@ public class LeadServiceImpl implements LeadService {
 				user.setModulesDisplayType(ModulesDisplayType.LIST);
 				user.getRoles().add(Role.USER_ROLE);
 				user.initialiseCommonFields(true, loggedInUserId);
+				user.setEmailValid(true);
+				user.setEmailValidationInd(true);
+				user.setEmailCategory("catch-all");
 				utilService.setEmailValidationByZeroBounce(user);
 				genericDAO.save(user);
 				if (user.getAlias() == null) {

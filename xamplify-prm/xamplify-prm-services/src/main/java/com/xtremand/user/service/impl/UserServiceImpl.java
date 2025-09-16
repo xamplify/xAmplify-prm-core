@@ -30,7 +30,6 @@ import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.ParseException;
 import org.hibernate.HibernateException;
-import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -1543,6 +1542,20 @@ public class UserServiceImpl implements UserService {
 				List<User> newUsers = new ArrayList<>();
 				teamService.iterateDtosAndAddTeamMembers(teamMemberDTOs, user, teamMembers, newUsers);
 
+				User addedTeamMember = loadUser(
+						Arrays.asList(new Criteria("emailId", OPERATION_NAME.eq, teamMemberDTO.getEmailId())),
+						new FindLevel[] { FindLevel.SHALLOW });
+
+				List<User> updatedTeamMembers = new ArrayList<>();
+				Integer primayKeyId = teamDao.getPrimaryKeyId(addedTeamMember.getUserId());
+				addedTeamMember.setTeamMemerPkId(primayKeyId);
+				updatedTeamMembers.add(addedTeamMember);
+				mailService.sendTeamMemberEmails(updatedTeamMembers, user, false);
+			} else {
+				moduleAccess.setCompanyProfile(companyProfile);
+				moduleAccess.setExcludeUsersOrDomains(true);
+				moduleAccess.setLoginAsPartner(true);
+				moduleAccess.setMailsEnabled(true);
 			}
 			moduleAccess.setDashboardType(DashboardTypeEnum.DASHBOARD);
 			moduleAccess.setCompanyProfile(companyProfile);
@@ -2180,22 +2193,7 @@ public class UserServiceImpl implements UserService {
 	}
 
 	private void updateUserEmailValidation(User exUser) throws ParseException, IOException {
-		JSONObject jsonObject = emailValidatorService.validate(exUser.getEmailId(), null, "", 1, 1);
-		if (jsonObject.has("error") && jsonObject.getString("error")
-				.equalsIgnoreCase("Invalid API Key or your account ran out of credits")) {
-			exUser.setEmailValid(false);
-			exUser.setEmailValidationInd(false);
-		} else if (jsonObject.has("error")) {
-			exUser.setEmailValid(false);
-			exUser.setEmailValidationInd(true);
-			exUser.setEmailCategory("invalid");
-		} else {
-			String status = jsonObject.getString("status");
-			exUser.setEmailValid(
-					(status.equalsIgnoreCase("valid") || status.equalsIgnoreCase("catch-all")) ? true : false);
-			exUser.setEmailValidationInd(true);
-			exUser.setEmailCategory(status);
-		}
+
 	}
 
 	@Override
