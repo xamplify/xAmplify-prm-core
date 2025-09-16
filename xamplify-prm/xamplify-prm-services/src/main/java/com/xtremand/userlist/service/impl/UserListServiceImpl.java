@@ -4230,4 +4230,13 @@ public class UserListServiceImpl implements UserListService {
 		response.setStatusCode(isOwnContact ? 200 : 400);
 		return response;
 	}
+	
+	@Override
+	public XtremandResponse findDefaultContactList(Integer loggedInUserId, String moduleName) {
+		XtremandResponse response = new XtremandResponse();
+		Integer companyId = userDAO.getCompanyIdByUserId(loggedInUserId);
+		response.setData(userListDAO.findDefaultContactListIdByCompanyId(companyId, moduleName));
+		response.setStatusCode(200);
+		return response;
+	}
 }

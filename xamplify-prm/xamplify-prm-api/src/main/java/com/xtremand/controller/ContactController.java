@@ -662,4 +662,10 @@ public class ContactController {
 			HttpServletResponse response) {
 		userListService.downloadWelcomeEmailsList(pageable,userId,response);
 	}
+	
+	@GetMapping("/default-contact-list/userId/{loggedInUserId}/moduleName/{moduleName}")
+	public ResponseEntity<XtremandResponse> findDefaultContactList(@PathVariable Integer loggedInUserId,
+			@PathVariable String moduleName) {
+		return ResponseEntity.ok(userListService.findDefaultContactList(loggedInUserId, moduleName));
+	}
 }

@@ -266,4 +266,6 @@ public interface UserListService {
 
 	public XtremandResponse deleteContactFromAllContactLists(List<Integer> contactIds, Integer loggedInUserId);
 
+	public XtremandResponse findDefaultContactList(Integer loggedInUserId, String moduleName);
+
 }
