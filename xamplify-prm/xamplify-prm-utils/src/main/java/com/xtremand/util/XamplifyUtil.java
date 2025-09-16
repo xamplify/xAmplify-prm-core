@@ -33,7 +33,6 @@ import java.util.stream.Collectors;
 
 import javax.net.ssl.HttpsURLConnection;
 
-import org.apache.commons.lang3.ArrayUtils;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
@@ -663,16 +662,7 @@ public class XamplifyUtil {
 	}
 
 	public String frameVanityURL(String baseClientURL, String companyProfileName) {
-		String[] urlArray = baseClientURL.split("//");
-		StringBuilder sb = null;
-		if (ArrayUtils.isNotEmpty(urlArray)) {
-			sb = new StringBuilder(urlArray[0]);
-			sb.append("//");
-			sb.append(companyProfileName);
-			sb.append(".");
-			sb.append(urlArray[1]);
-		}
-		return sb != null ? sb.toString() : baseClientURL;
+		return baseClientURL;
 	}
 
 	public String replaceCompanyLogo(String htmlBody, String companyLogo) {

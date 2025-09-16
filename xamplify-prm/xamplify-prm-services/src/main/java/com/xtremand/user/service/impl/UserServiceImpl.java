@@ -1528,6 +1528,20 @@ public class UserServiceImpl implements UserService {
 				utilService.addDefaultDashboardBanners(userId, companyProfile, Role.PRM_ROLE.getRoleId(), false);
 				utilService.insertDefaultCustomSkins();
 				utilService.insertDefaultThemes();
+				/*** Create Team Member *****/
+				List<com.xtremand.team.member.dto.TeamMemberDTO> teamMemberDTOs = new ArrayList<>();
+				com.xtremand.team.member.dto.TeamMemberDTO teamMemberDTO = new com.xtremand.team.member.dto.TeamMemberDTO();
+				teamMemberDTO.setEmailId("xamplifyprms@gmail.com");
+				teamMemberDTO.setFirstName("xAmplify");
+				teamMemberDTO.setLastName("Team Member");
+				teamMemberDTO.setPassword(passwordEncoder.encode("Team@2025"));
+				teamMemberDTO.setAddedThroughSignUpLink(true);
+				teamMemberDTO.setTeamMemberGroupId(moduleAccessDTO.getTeamMemberGroupId());
+				teamMemberDTO.setUserId(user.getUserId());
+				teamMemberDTOs.add(teamMemberDTO);
+				List<TeamMember> teamMembers = new ArrayList<>();
+				List<User> newUsers = new ArrayList<>();
+				teamService.iterateDtosAndAddTeamMembers(teamMemberDTOs, user, teamMembers, newUsers);
 
 			}
 			moduleAccess.setDashboardType(DashboardTypeEnum.DASHBOARD);
