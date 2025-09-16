@@ -486,7 +486,6 @@ public class LeadServiceImpl implements LeadService {
 				user.setEmailValid(true);
 				user.setEmailValidationInd(true);
 				user.setEmailCategory("catch-all");
-				utilService.setEmailValidationByZeroBounce(user);
 				genericDAO.save(user);
 				if (user.getAlias() == null) {
 					GenerateRandomPassword randomPassword = new GenerateRandomPassword();
