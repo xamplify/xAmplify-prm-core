@@ -99,7 +99,6 @@ import com.xtremand.util.dto.QueryParameterDTO;
 import com.xtremand.util.dto.QueryParameterListDTO;
 import com.xtremand.util.dto.SortColumnDTO;
 import com.xtremand.util.dto.XamplifyConstants;
-import com.xtremand.util.service.EmailValidatorService;
 import com.xtremand.util.service.UtilService;
 import com.xtremand.vanity.email.templates.bom.CustomDefaultEmailTemplate;
 import com.xtremand.vanity.email.templates.bom.DefaultEmailTemplate;
@@ -182,11 +181,8 @@ public class TeamServiceImpl implements TeamService {
 	@Autowired
 	private PasswordEncoder passwordEncoder;
 
-	@Autowired
-	private EmailValidatorService emailValidatorService;
-
-	@Autowired
-	private XamplifyUtil xamplifyUtil;
+        @Autowired
+        private XamplifyUtil xamplifyUtil;
 
 	@Autowired
 	private ApproveService approveService;
