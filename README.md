@@ -104,6 +104,24 @@ git clone https://github.com/xamplify/xAmplify-prm-core
    - If you have a provided backup file, restore it now.
 3. Verify the hostname, port, DB name, username & password — you will place these in `config-production.properties` next.
 
+💾 Database Backup & Restore
+
+A sample DB backup file is included.
+
+download through git
+
+xAmplify-prm-core/Database/xAmplify-prm-schema.backup
+
+
+Restore with pg_restore:
+
+pg_restore -h localhost -U postgres -d xamplify-prm /path/to/xamplify_prm_backup.dump
+
+
+Or via DBeaver:
+
+Right-click DB → Tools → Restore → select backup file → Execute.
+
 ---
 
 ### 4) Configure `application.properties` & `config-production.properties`
@@ -248,24 +266,6 @@ debug.log, error.log
 
 
 👉 Use WinSCP or SFTP to view logs.
-
-💾 Database Backup & Restore
-
-A sample DB backup file is included.
-
-download through git
-
-xAmplify-prm-core/Database/xAmplify-prm-schema.backup
-
-
-Restore with pg_restore:
-
-pg_restore -h localhost -U postgres -d xamplify-prm /path/to/xamplify_prm_backup.dump
-
-
-Or via DBeaver:
-
-Right-click DB → Tools → Restore → select backup file → Execute.
 
 ### 8) Verify / Smoke test
 
