@@ -167,7 +167,6 @@ import com.xtremand.util.dto.PartnerOrContactInputDTO;
 import com.xtremand.util.dto.ShareContentRequestDTO;
 import com.xtremand.util.dto.UserDetailsUtilDTO;
 import com.xtremand.util.service.DownloadDataUtilService;
-import com.xtremand.util.service.EmailValidatorService;
 import com.xtremand.util.service.ThymeLeafService;
 import com.xtremand.util.service.UtilService;
 import com.xtremand.vanity.email.templates.bom.CustomDefaultEmailTemplate;
@@ -454,9 +453,6 @@ public class AsyncService {
 
 	@Autowired
 	private MailService mailService;
-
-	@Autowired
-	EmailValidatorService emailValidatorService;
 
 	@Autowired
 	private FormDao formDao;

@@ -156,7 +156,6 @@ import com.xtremand.util.dto.ModulesEmailNotification;
 import com.xtremand.util.dto.QueryParameterDTO;
 import com.xtremand.util.dto.ViewTypePatchRequestDTO;
 import com.xtremand.util.service.CsvUtilService;
-import com.xtremand.util.service.EmailValidatorService;
 import com.xtremand.util.service.ThymeLeafService;
 import com.xtremand.util.service.UtilService;
 import com.xtremand.vanity.url.dao.VanityURLDao;
@@ -265,9 +264,6 @@ public class UserServiceImpl implements UserService {
 
 	@Autowired
 	private MailService mailService;
-
-	@Autowired
-	EmailValidatorService emailValidatorService;
 
 	@Autowired
 	HibernateUserListDAO userListDAO;

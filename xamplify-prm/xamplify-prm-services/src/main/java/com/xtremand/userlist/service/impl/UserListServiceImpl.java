@@ -118,7 +118,6 @@ import com.xtremand.util.dto.QueryParameterDTO;
 import com.xtremand.util.dto.UserListOperationsAsyncDTO;
 import com.xtremand.util.dto.XamplifyConstants;
 import com.xtremand.util.service.CsvUtilService;
-import com.xtremand.util.service.EmailValidatorService;
 import com.xtremand.util.service.UtilService;
 import com.xtremand.vanity.url.dto.VanityUrlDetailsDTO;
 import com.xtremand.workflow.dao.WorkflowDAO;
@@ -150,9 +149,6 @@ public class UserListServiceImpl implements UserListService {
 
 	@Autowired
 	private CompanyProfileDao companyDao;
-
-	@Autowired
-	EmailValidatorService emailValidatorService;
 
 	@Autowired
 	private UserDAO userDAO;
