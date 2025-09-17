@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+<META http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<style>
+* { font-size: 100%; font-family: Century Gothic;}
+body{font-family: Century Gothic; background-color: #fff;text-align: center}
+table{border:1px solid #dedede;padding:1em 3em;align:center;width:600px;}
+td{font-size: 13px; line-height: 24px; padding: 15px 40px}
+</style>    
+</head>
+<body>
+<table align="center">
+    <tbody>
+        <tr>
+        <td align="center">
+            <a href="#" target="_blank"> 
+            <img src="https://raw.githubusercontent.com/xamplify/xAmplify-prm-core/main/docs/images/xamplify-logo.png" alt="https://raw.githubusercontent.com/xamplify/xAmplify-prm-core/main/docs/images/xamplify-logo.png" width="145" align="center"/>
+            </a>
+        </td>
+        </tr>
+        <tr>
+            <td>
+                <p>Hi <span th:text="${toName} ?: 'there'"></span>,</p>
+            </td>
+        </tr>
+        <tr>
+            <td> 
+				I’m <span th:text="${greetingPhrase} ?: 'here'"></span> to inform you that I have <span th:text="${statusPhrase} ?: 'changed'"></span> the authority to approve or reject content in xAmplify.
+			</td>
+        </tr>
+        
+        <tr>
+            <td> 
+				All <span th:text="${slashSeperatedModuleNames} ?: 'the content'"></span> created by you<span th:text="${helperText} ?: 'require approval'"></span>    
+			</td>
+        </tr>       
+        
+        <tr>
+           <td>
+	            <b>	
+					Assigned Modules :
+	                <span th:text="${assignedModuleNames} ?: 'not available'"></span>
+	            </b>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <b>Best regards,</b><br/>
+				<span th:text="${senderFullName} ?: 'not available'"></span><br/><br/>
+            </td>
+        </tr>
+    </tbody>
+</table>
+</body>
+</html>

@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+<head>
+<META http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<style>
+* {
+	font-size: 100%;
+	font-family: Century Gothic;
+}
+
+body {
+	font-family: Century Gothic;
+	background-color: #fff;
+	text-align: center
+}
+
+table {
+	border: 1px solid #dedede;
+	padding: 1em 3em;
+	align: center;
+	width: 600px;
+}
+
+td {
+	font-size: 13px;
+	line-height: 24px;
+	padding: 15px 40px
+}
+</style>
+</head>
+<body>
+	<table align="center">
+		<tbody>
+			<tr>
+				<td align="center"><a th:href="${targetURL}" target="_blank">
+						<img src="https://raw.githubusercontent.com/xamplify/xAmplify-prm-core/main/docs/images/xamplify-logo.png"
+						alt="No Logo" width="145" align="center" />
+				</a></td>
+			</tr>
+			<tr>
+				<td>
+					<p>
+						Hi <span
+							th:text="${dashboardButtonSharedEmailNotification.firstName} ?: 'there'"></span>,
+					</p>
+				</td>
+			</tr>
+
+			<tr>
+				<td><span
+					th:text="${dashboardButtonSharedEmailNotification.bodyPrefixText}"></span></td>
+			</tr>
+
+			<tr>
+				<td>
+					<p>SSO Partner Email Address : </p>
+				</td>
+			</tr>
+
+			<tr>
+				<td>
+					<table border="1">
+						<tr
+							th:each="partnerEmailAddress : ${dashboardButtonSharedEmailNotification.partnerEmailAddresses}">
+							<th><span th:text="${partnerEmailAddress}"
+								style="color: #249d24;"> </span></th>
+						</tr>
+					</table>
+				</td>
+			</tr>
+
+			<tr>
+				<td>
+					<p>Published Dashboard Button(s) : </p>
+				</td>
+			</tr>
+
+			<tr>
+				<td>
+					<table border="1">
+						<tr
+							th:each="dashboardButton : ${dashboardButtonSharedEmailNotification.dashboardButtonTitles}">
+							<th><span th:text="${dashboardButton}"
+								style="color: #249d24;"> </span></th>
+						</tr>
+					</table>
+				</td>
+			</tr>
+		</tbody>
+	</table>
+</body>
+</html>

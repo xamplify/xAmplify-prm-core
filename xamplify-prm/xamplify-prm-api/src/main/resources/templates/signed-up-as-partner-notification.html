@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+<head>
+<META http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<style>
+* {
+	font-size: 100%;
+	font-family: Century Gothic;
+}
+
+body {
+	font-family: Century Gothic;
+	background-color: #fff;
+	text-align: center
+}
+
+table {
+	border: 1px solid #dedede;
+	padding: 1em 3em;
+	align: center;
+	width: 600px;
+}
+
+td {
+	font-size: 13px;
+	line-height: 24px;
+	padding: 15px 40px
+}
+</style>
+</head>
+<body>
+	<table align="center">
+		<tbody>
+			<tr>
+				<td align="center"><a th:href="${targetURL}" target="_blank">
+						<img th:src="${xAmplifyLogo}" alt="" width="145" align="center" />
+				</a></td>
+			</tr>
+			<tr>
+				<td>
+					<p>
+						Hi <span th:text="${welcomeDisplayName}"></span>,
+					</p>
+				</td>
+			</tr>
+			<tr>
+				<td>We would like to inform you that the partnership with <b><span
+						th:text="${vendorCompanyName}"></span></b> has been successfully
+					established through the sign-up link. Please review the details you
+					have entered below.
+				</td>
+			</tr>
+
+			<tr>
+				<td><b> Email: <span th:text="${partnerEmailId}"></span><br />
+						Company Name: <span th:text="${companyName}"></span><br /> 
+						<span th:if="${isPasswordUpdated}">Password: <span th:text="${password}"></span></span>
+					</b>
+				</td>
+			</tr>
+
+			<tr>
+				<td align="center" style="padding: 2em 0;"><a
+					th:href="${loginUrl}" target="_blank"
+					style="color: #fff; background-color: #0943e5; text-decoration: none; padding: 10px 40px;"><span>Login</span></a></td>
+			</tr>
+
+
+			<tr>
+				<td style="font-family: Century Gothic; font-size: 14px;"><br />
+					Best Regards,<br /> The xAmplify Team</td>
+			</tr>
+
+		</tbody>
+	</table>
+</body>
+</html>

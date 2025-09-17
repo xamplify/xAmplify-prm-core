@@ -1,0 +1,58 @@
+<html>
+<head>
+<META http-equiv="Content-Type" content="text/html charset=UTF-8" />
+<META name="viewport" content="width=device-width, initial-scale=1" />
+</head>
+<body style="font-family: Century Gothic; background-color: #fff;">
+	<table width="100%" cellpadding="0" cellspacing="0" border="0">
+		<tbody>
+			<tr>
+				<td align="center" style="background-color: #fff;">
+					<table width="600" cellpadding="0" cellspacing="0" border="0"
+						style="border: 1px solid #dedede;">
+						<tbody>
+							<tr>
+								<td style="background-color: rgb(255, 255, 255);">
+									<table width="100%" cellpadding="0" cellspacing="0" border="0">
+										<tbody>
+											<tr>
+												<td align="center" style="padding: 46px 0 0 0;"><a
+													th:href="${vendor.companyProfile.website}"
+													style="color: inherit;" target="_blank"> <img
+														th:src="${vendorCompanyLogo}" alt="" width="145"
+														align="center"></img>
+												</a></td>
+											</tr>
+											<tr>
+												<td
+													style="font-family: Century Gothic; font-size: 14px; line-height: 36px; padding: 40px 90px 0px 90px;">
+													<p>
+														Hi <span th:text="${partnerFirstName} ?: 'there'"></span>,
+													</p>
+												</td>
+											</tr>
+											<tr>
+												<td
+													style="padding: 10px 90px; font-family: Century Gothic; font-size: 14px; line-height: 20px;">The
+													vendor has declined to add you as a partner</td>
+											</tr>
+											<tr>
+												<td
+													style="font-family: Century Gothic; font-size: 14px; padding: 0px 90px 90px 90px;">
+													<br /> Best,<br />
+												<br /> <span th:text="${vendor.firstName}"></span><br /> <span
+													th:text="${vendor.companyProfile.companyName}"></span>
+												</td>
+											</tr>
+										</tbody>
+									</table>
+								</td>
+							</tr>
+						</tbody>
+					</table>
+				</td>
+			</tr>
+		</tbody>
+	</table>
+</body>
+</html>

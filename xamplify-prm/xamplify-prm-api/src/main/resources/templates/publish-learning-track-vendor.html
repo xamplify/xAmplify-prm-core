@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+<head>
+<META http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<style>
+* {
+	font-size: 100%;
+	font-family: Century Gothic;
+}
+
+body {
+	font-family: Century Gothic;
+	background-color: #fff;
+	text-align: center
+}
+
+table {
+	border: 1px solid #dedede;
+	padding: 1em 3em;
+	align: center;
+	width: 600px;
+}
+
+td {
+	font-size: 13px;
+	line-height: 24px;
+	padding: 15px 40px
+}
+</style>
+</head>
+<body>
+	<table align="center">
+		<tbody>
+			<tr>
+				<td align="center"><a th:href="${loginUrl}" target="_blank">
+						<img src="https://raw.githubusercontent.com/xamplify/xAmplify-prm-core/main/docs/images/xamplify-logo.png"
+						alt="https://raw.githubusercontent.com/xamplify/xAmplify-prm-core/main/docs/images/xamplify-logo.png"
+						width="145" align="center" />
+				</a></td>
+			</tr>
+			<tr>
+				<td>
+					<p>
+						Hi <span th:text="${receiverName} ?: 'there'"></span>,
+					</p>
+				</td>
+			</tr>
+			<tr>
+				<td> We are pleased to let you know that your <span th:text="${learningTrackType}"></span> is successfully published.</td>
+			</tr>
+
+			<tr>
+				<td>Learning Track Title: <b> <span
+						th:text="${learningTrackTitle}"> Learning Track Title</span><br />
+				</b></td>
+			</tr>
+			<tr>
+				<td>Published By:<b> <span th:text="${publishedBy}"></span></b><br />
+					Email:<b> <span th:text="${publishedByEmail}"></span></b><br /> 
+					Published On: <b><span th:text="${publishedOn}"></span></b>
+				</td>
+			</tr>
+			<tr>
+				<td>Log in to view this</td>
+			</tr>
+			<tr>
+				<td align="center" style="padding: 2em 0;"><a
+					th:href="${loginUrl}" target="_blank"
+					style="color: #fff; background-color: #0943e5; text-decoration: none; padding: 10px 40px;">Login</a></td>
+			</tr>
+
+			<tr>
+				<td>The xAmplify Team<br />
+				<br />
+				</td>
+			</tr>
+		</tbody>
+	</table>
+</body>
+</html>

@@ -1,0 +1,58 @@
+<!-- Send Email to sales persons when someone requested for a demo -->
+<!DOCTYPE html>
+<html>
+<head>
+<META http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<style>
+* {
+	font-size: 100%;
+	font-family: Century Gothic;
+}
+
+body {
+	font-family: Century Gothic;
+	background-color: #fff;
+	text-align: center
+}
+
+table {
+	border: 1px solid #dedede;
+	padding: 1em 3em;
+	align: center;
+	width: 600px;
+}
+
+td {
+	font-size: 13px;
+	line-height: 24px;
+	padding: 15px 40px
+}
+
+.added {
+	color: green;
+}
+
+.removed {
+	color: red;
+}
+</style>
+</head>
+<body>
+
+	<!-- InActive Partners-->
+	<div th:if="${!activeAndInActivePartnerEmailNotificationDTO.inActivePartners.isEmpty()}">
+		<p>Below Partner added to InActive Master Partner List </p>
+		<table border="1">
+			<tr
+				th:each="inactivePartner : ${activeAndInActivePartnerEmailNotificationDTO.inActivePartners}">
+				<td class="removed"><span th:text="${inactivePartner}"></span></td>
+			</tr>
+		</table>
+	</div>
+
+	<br />
+	
+
+	
+</body>
+</html>

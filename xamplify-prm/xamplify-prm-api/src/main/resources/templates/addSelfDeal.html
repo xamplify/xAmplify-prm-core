@@ -1,0 +1,60 @@
+<!-- Send Email to vendor when partner registers a deal under opportunities tab -->
+<!DOCTYPE html>
+<html>
+<head>
+<META http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<style>
+* { font-size: 100%; font-family: Century Gothic;}
+body{font-family: Century Gothic; background-color: #fff;text-align: center}
+table{border:1px solid #dedede;padding:1em 3em;align:center;width:600px;}
+td{font-size: 13px; line-height: 24px; padding: 15px 40px}
+</style>    
+</head>
+<body>
+<table align="center">
+    <tbody>
+        <tr>
+        <td align="center">
+            <a href="#" target="_blank"> 
+            <img src="https://raw.githubusercontent.com/xamplify/xAmplify-prm-core/main/docs/images/xamplify-logo.png" alt="https://raw.githubusercontent.com/xamplify/xAmplify-prm-core/main/docs/images/xamplify-logo.png" width="145" align="center"/>
+            </a>
+        </td>
+        </tr>
+        <tr>
+            <td>
+                <p>Hey <span th:text="${toName} ?: 'there'"></span>,</p>
+            </td>
+        </tr>
+        <tr>
+            <td>We’re here to share the awesome news that a new deal has registered. Here are the juicy details:</td>
+        </tr>
+
+        <tr>
+            <td>
+            <b> 
+            	Created By Name: <span th:text="${deal.createdByName}"></span><br/> 
+                Created By Company: <span th:text="${deal.createdByCompanyName}"></span><br/>
+            	Lead Name: <span th:text="${deal.associatedLead} ? ${deal.associatedLead.lastName} : '---'"></span><br/>
+                Lead Company: <span th:text="${deal.associatedLead} ? ${deal.associatedLead.company} : '---'"></span><br/>
+                Deal Name: <span th:text="${deal.title}"></span><br/>
+                Deal Amount: <span th:text="${deal.amount}"></span><br/>
+                Deal Stage: <span th:text="${deal.currentStage.stageName}"></span><br/>
+                Comment: <span th:text="${deal.dealComment} ? ${deal.dealComment} : '---'"></span>
+            </b></td>
+        </tr>
+
+        <tr>
+            <td>The next step is for you to log in and approve, reject, or put the deal on hold. If you’re ready to do that now, just click the log in button below</td>
+        </tr>
+    	<tr>
+			<td align="center" style="padding: 2em 0;"><a th:href="${targetURL}" target="_blank" style="color: #fff;background-color: #0943e5;text-decoration: none;padding: 10px 40px;">Login</a></td>
+		</tr>        
+        <tr>
+            <td>
+                The xAmplify Team<br/><br/>
+            </td>
+        </tr>
+    </tbody>
+</table>
+</body>
+</html>

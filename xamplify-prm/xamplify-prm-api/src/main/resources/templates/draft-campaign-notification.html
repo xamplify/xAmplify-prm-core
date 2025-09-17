@@ -1,0 +1,52 @@
+<!-- Send Email to sales persons when someone requested for a demo -->
+<!DOCTYPE html>
+<html>
+<head>
+<META http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<style>
+* { font-size: 100%; font-family: Century Gothic;}
+body{font-family: Century Gothic; background-color: #fff;text-align: center}
+table{border:1px solid #dedede;padding:1em 3em;align:center;width:600px;}
+td{font-size: 13px; line-height: 24px; padding: 15px 40px}
+
+</style>    
+</head>
+<body>
+<table align="center">
+    <tbody>
+        <tr>
+        <td align="center">
+            <img src="https://raw.githubusercontent.com/xamplify/xAmplify-prm-core/main/docs/images/xamplify-logo.png" alt="https://raw.githubusercontent.com/xamplify/xAmplify-prm-core/main/docs/images/xamplify-logo.png" width="145" align="center"/>
+        </td>
+        </tr>
+        <tr>
+            <td>
+                <p>Hi <span th:text="${welcomeDisplayName}"></span>,</p>
+            </td>
+        </tr>
+		<tr>
+			<td>Below scheduled campaign(s) are moved to draft mode after deleting <span th:text="${contactEmailId}"></span> </td>
+		</tr>
+		
+		<tr>
+		<td>
+		<table border="1">
+		  <tr th:each="campaignName : ${campaignNames}">
+			<td>
+			<span  th:text="${campaignName}">
+			</span>
+			</td>
+		  </tr>
+		</table>
+		</td>
+		</tr>
+		<tr>
+			<td>
+			 The xAmplify Team<br/><br/>
+			</td>
+		</tr>
+       
+    </tbody>
+</table>
+</body>
+</html>

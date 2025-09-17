@@ -1,0 +1,112 @@
+<!-- Send Email when partner makes a contact as a lead. Vendor will receive a notification email -->
+<!DOCTYPE html>
+<html>
+<head>
+<META http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<style>
+* {
+	font-size: 100%;
+	font-family: Century Gothic;
+}
+
+body {
+	font-family: Century Gothic;
+	background-color: #fff;
+	text-align: center
+}
+
+table {
+	border: 1px solid #dedede;
+	padding: 1em 3em;
+	align: center;
+	width: 600px;
+}
+
+td {
+	font-size: 13px;
+	line-height: 24px;
+	padding: 15px 40px
+}
+</style>
+</head>
+<body>
+	<table align="center">
+		<tbody>
+
+			<tr>
+				<td>
+					<p>Hi,</p>
+				</td>
+			</tr>
+			<tr>
+				<td>The below campaign has been scheduled at <b><span
+						th:text="${launchTime}"></span>, <span th:text="${timezone}"></span></b>
+				</td>
+			</tr>
+
+			<tr>
+				<td>Total campaigns scheduled at the same time : <b><span
+						th:text="${totalCampaignsScheduledAtSameTime}"></span></b>
+				</td>
+			</tr>
+
+
+			<tr>
+				<td>
+					<table border="1">
+						<tr>
+							<th>Campaign Name</th>
+							<td><span th:text="${campaignName}"></span></td>
+						</tr>
+						<tr>
+							<th>Campaign Id</th>
+							<td><span th:text="${campaignId}"></span></td>
+						</tr>
+
+						<tr>
+							<th>Campaign Type</th>
+							<td><span th:text="${campaignType}"></span></td>
+						</tr>
+
+						<tr>
+							<th>Launch Time</th>
+							<td><span th:text="${launchTime}"></span>, <span
+								th:text="${timezone}"></span></td>
+						</tr>
+
+						<tr>
+							<th>Launch Time In IST</th>
+							<td><span th:text="${convertedIstDateAndTime}"></span></td>
+						</tr>
+
+						<tr>
+							<th>Campaign Scheduled By</th>
+							<td><span th:text="${campaignCreatedBy}"></span></td>
+						</tr>
+
+						<tr>
+							<th>Company Profile Name</th>
+							<td><span th:text="${companyProfileName}"></span></td>
+						</tr>
+
+						<tr>
+							<th>Company Name</th>
+							<td><span th:text="${companyName}"></span></td>
+						</tr>
+						<tr>
+							<th>Company Id</th>
+							<td><span th:text="${companyId}"></span></td>
+						</tr>
+
+
+					</table>
+				</td>
+			</tr>
+
+
+
+
+		</tbody>
+	</table>
+</body>
+</html>

@@ -1,0 +1,32 @@
+<html><head> 
+<META http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+ </head> 
+ <body style="font-family:Century Gothic;background-color: #fff;"> 
+  <table width="100%" cellpadding="0" cellspacing="0" border="0"> 
+   <tbody>
+    <tr> 
+     <td align="center" style="background-color: #fff;"> 
+      <table width="600" cellpadding="0" cellspacing="0" border="0" style="border: 1px solid #dedede;"> 
+       <tbody>
+        <tr> 
+         <td style="background-color:rgb(255, 255, 255);"> 
+          <table width="100%" cellpadding="0" cellspacing="0" border="0"> 
+           <tbody>
+            <tr> 
+             <td align="center" style="padding:46px 0 0 0;"> <a th:href="${sender.companyProfile.website}" style="color:inherit;" target="_blank"> <img th:src="${senderCompanyLogo}" alt="" width="145" align="center"></img> </a> </td> 
+            </tr> 
+           <!--  <tr> 
+             <td style="font-family:Century Gothic;font-size:14px;line-height:36px;padding:40px 90px 0px 90px;"> Hi There, </td> 
+            </tr> -->
+			<tr> 
+             <td style="padding:10px 90px;font-family:Century Gothic;font-size:14px;line-height:20px;text-align: justify;"><div th:remove="tag" th:utext="${vendorInvitationDTO.message}"></div></td> 
+            </tr>		
+			<!-- <tr>
+				<td style="font-family:Century Gothic;font-size:14px;padding:20px 90px 90px 90px;">
+					<br/>
+					Best,<br/><br/>
+					<span th:text="${sender.firstName}"></span><br/>
+					<span th:text="${sender.companyProfile.companyName}"></span>
+					</td>
+			</tr> -->
+</tbody></table></td></tr></tbody></table></td></tr></tbody></table></body></html>

@@ -1,0 +1,89 @@
+<!-- Send Email to sales persons when someone requested for a demo -->
+<!DOCTYPE html>
+<html>
+<head>
+<META http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<style>
+* {
+	font-size: 100%;
+	font-family: Century Gothic;
+}
+
+body {
+	font-family: Century Gothic;
+	background-color: #fff;
+	text-align: center
+}
+
+table {
+	border: 1px solid #dedede;
+	padding: 1em 3em;
+	align: center;
+	width: 600px;
+}
+
+td {
+	font-size: 13px;
+	line-height: 24px;
+	padding: 15px 40px
+}
+
+.added {
+	color: green;
+}
+
+.removed {
+	color: red;
+}
+</style>
+</head>
+<body>
+
+	<!-- Added Team Member Groups-->
+	<div th:if="${!modulesEmailNotification.addedTeamMemberGroupsNotifications.isEmpty()}">
+		<p>Modules are added to below team member groups</p>
+		<table border="1">
+			<tr
+				th:each="addedTeamMemberGroup : ${modulesEmailNotification.addedTeamMemberGroupsNotifications}">
+				<td class="added"><span th:text="${addedTeamMemberGroup}"></span></td>
+			</tr>
+		</table>
+	</div>
+
+	<br />
+	<!-- Added Team Member EmailIds-->
+	<div th:if="${!modulesEmailNotification.addedTeamMemberEmailIdsNotifications.isEmpty()}">
+		<p>Modules are added to below team members</p>
+		<table border="1">
+		<tr
+			th:each="addedTeamMemberEmailId : ${modulesEmailNotification.addedTeamMemberEmailIdsNotifications}">
+			<td class="added"><span th:text="${addedTeamMemberEmailId}"></span></td>
+		</tr>
+	</table>
+	</div>
+	
+	<br />
+	<!-- Removed Team Member Groups-->
+	<div th:if="${!modulesEmailNotification.removedTeamMemberGroupsNotifications.isEmpty()}">
+		<p>Modules are removed from below team member groups</p>
+		<table border="1">
+		<tr
+			th:each="removedTeamMemberGroup : ${modulesEmailNotification.removedTeamMemberGroupsNotifications}">
+			<td class="removed"><span th:text="${removedTeamMemberGroup}"></span></td>
+		</tr>
+	</table>
+	</div>
+	<br />
+	<!-- Removed Team Member EmailIds-->
+	<div th:if="${!modulesEmailNotification.removedTeamMemberEmailIdsNotifications.isEmpty()}">
+		<p>Modules are removed for below team members</p>
+		<table border="1">
+		<tr
+			th:each="removedTeamMemberEmailId : ${modulesEmailNotification.removedTeamMemberEmailIdsNotifications}">
+			<td class="removed"><span th:text="${removedTeamMemberEmailId}"></span></td>
+		</tr>
+	</table>
+	</div>
+	
+</body>
+</html>

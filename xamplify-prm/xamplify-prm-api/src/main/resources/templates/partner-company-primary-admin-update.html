@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+<head>
+<META http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<style>
+* {
+	font-size: 100%;
+	font-family: Century Gothic;
+}
+
+body {
+	font-family: Century Gothic;
+	background-color: #fff;
+	text-align: center
+}
+
+table {
+	border: 1px solid #dedede;
+	padding: 1em 3em;
+	align: center;
+	width: 600px;
+}
+
+td {
+	font-size: 13px;
+	line-height: 24px;
+	padding: 15px 40px
+}
+</style>
+</head>
+<body>
+	<table align="center">
+		<tbody>
+
+			<tr>
+				<td>
+					<p>Hi,</p>
+				</td>
+			</tr>
+			<tr>
+				<td>The primary admin of the partner company has been
+					successfully updated.</td>
+			</tr>
+
+			<tr>
+				<td align="center">Below are the details</td>
+			</tr>
+
+			<tr>
+				<td>
+					<table border="1">
+						<tr>
+							<th>Partner Company Name</th>
+							<td><span th:text="${partnerCompanyName}"></span></td>
+						</tr>
+						<tr>
+							<th>Primary Admin Email Address</th>
+							<td><span th:text="${primaryAdminEmailAddress}"></span></td>
+						</tr>
+
+						<tr>
+							<th>Updated By</th>
+							<td><span th:text="${updatedBy}"></span></td>
+						</tr>
+						<tr>
+							<th>Vendor Company Name</th>
+							<td><span th:text="${vendorCompanyName}"></span></td>
+						</tr>
+
+					</table>
+				</td>
+			</tr>
+
+		</tbody>
+	</table>
+</body>
+</html>
