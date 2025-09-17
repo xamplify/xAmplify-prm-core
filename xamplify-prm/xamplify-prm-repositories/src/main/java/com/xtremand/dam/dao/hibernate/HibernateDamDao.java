@@ -4,7 +4,10 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.Serializable;
+import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -211,6 +214,10 @@ public class HibernateDamDao implements DamDao {
 	private static final String PARTNER_SIGNED = "SIGNED";
 
 	private static final String PARTNER_NOT_SIGNED = "NOTSIGNED";
+	
+	private static final String HOST = "http://localhost:8080/";
+	
+	private static final String XAMPLIFY_PRM = "xamplify-prm-api";
 
 	@Autowired
 	private SessionFactory sessionFactory;
@@ -591,6 +598,20 @@ public class HibernateDamDao implements DamDao {
 			setVideoFileDTOProperties(asset, updatedAsset, videoFileDTO, thumbnailPath, assetPath);
 			updatedAsset.setThumbnailPath(thumbnailPath);
 			updatedAsset.setAssetPath(assetPath);
+			if (XamplifyUtils.isValidString(updatedAsset.getAssetPath())) {
+				String baseUrl;
+				if (xamplifyUtil.isDev()) {
+					baseUrl = HOST;
+				} else if (xamplifyUtil.isQA()) {
+					baseUrl = devHost;
+				} else if (xamplifyUtil.isProduction()) {
+					baseUrl = productionHost;
+				} else {
+					baseUrl = HOST;
+				}
+				String proxyUrl = baseUrl + XAMPLIFY_PRM + "/api/pdf/proxy?pdfUrl=";
+				updatedAsset.setAssetProxyPath(proxyUrl);
+			}
 			/********** XNFR-255 *******/
 			WhiteLabeledContentDTO whiteLabeledContentDTO = whiteLabeledAssetDao
 					.findSharedByVendorCompanyNameByAssetId(asset.getId());
