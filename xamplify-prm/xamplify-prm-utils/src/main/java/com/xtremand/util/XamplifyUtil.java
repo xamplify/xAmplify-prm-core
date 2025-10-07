@@ -112,6 +112,8 @@ public class XamplifyUtil {
 
 	private static final String JAVA_SCRIPT_VOID = XamplifyConstants.JAVA_SCRIPT_VOID;
 
+	public static final String EMAIL_REGEX = "^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,63}$";
+
 	private static final String ALL = "All";
 
 	private static final String ALL_FA_ICON = "fa fa-check-circle";
