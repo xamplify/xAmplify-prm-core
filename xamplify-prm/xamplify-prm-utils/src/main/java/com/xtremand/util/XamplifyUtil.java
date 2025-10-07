@@ -1533,4 +1533,17 @@ public class XamplifyUtil {
 		return webUrl+"/login";
 	}
 
+	public Optional<Map<String, String>> getColorPaletteForDomain(String domain) {
+		try {
+			String json = getColorPaletteJson(domain);
+			Map<String, String> colorMap = new ObjectMapper().readValue(json, new TypeReference<Map<String, String>>() {
+			});
+			return Optional.of(colorMap);
+		} catch (Exception e) {
+			System.err.println("Failed to fetch or parse color palette: " + e.getMessage());
+			return Optional.empty();
+		}
+	}
+
+
 }
