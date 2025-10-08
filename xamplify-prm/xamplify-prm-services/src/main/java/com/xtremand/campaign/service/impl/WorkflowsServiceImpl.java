@@ -18,7 +18,7 @@ public class WorkflowsServiceImpl implements WorkflowsService {
 	
 	@Override
 	public XtremandResponse findWorkflowDetails(Pagination pagination) {
-		XtremandResponse response = new XtremandResponse();
+		XtremandResponse response = new XtremandResponse(); 
 		response.setStatusCode(200);
 		response.setData(workflowsDao.findEmailNotOpenedWorkflowDetails(pagination));
 		return response;

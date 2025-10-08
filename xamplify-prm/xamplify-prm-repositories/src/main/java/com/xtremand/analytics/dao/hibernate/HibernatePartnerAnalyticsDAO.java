@@ -1329,6 +1329,7 @@ public class HibernatePartnerAnalyticsDAO implements PartnerAnalyticsDAO {
 		query.setParameter(USER_ID, userId);
 		utilDao.applyPartnerCompanyIdsParameterList(applyTeamMemberFilter,
 				teamMemberFilterDTO.getPartnershipIdsOrPartnerCompanyIds(), query);
+		logger.debug("Executed findLeadsToDealsConversionPercentageAsText()");
 		return (String) query.uniqueResult();
 	}
 
