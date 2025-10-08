@@ -2463,8 +2463,7 @@ public class LeadServiceImpl implements LeadService {
 
 	@Override
 	public ModuleAccess findCompanyAccess(Integer companyId, String companyProfileName) {
-		ModuleAccess moduleAccess = leadDAO.getCompanyAccess(companyId);
-		return moduleAccess;
+		return leadDAO.getCompanyAccess(companyId);
 	}
 
 }
