@@ -48,8 +48,8 @@ public class CustomLinkRequestDTO implements Serializable {
 
 	@Getter(value = AccessLevel.NONE)
 	private String buttonText;
-	/**** XNFR-532 ***/
 
+	/**** XNFR-532 ***/
 	public static long getSerialversionuid() {
 		return serialVersionUID;
 	}
