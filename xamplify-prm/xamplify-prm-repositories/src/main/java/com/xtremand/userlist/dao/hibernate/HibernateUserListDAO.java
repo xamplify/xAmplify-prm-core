@@ -3207,7 +3207,6 @@ public class HibernateUserListDAO implements UserListDAO {
 
 	@Override
 	public UserUserList getContactInCompanyContactList(Integer userId, Integer loggedinCompanyId) {
-		// TODO Auto-generated method stub
 		return null;
 	}
 
@@ -4099,7 +4098,7 @@ public class HibernateUserListDAO implements UserListDAO {
 				+ "'" + UserList.TYPE.CONTACT_LISTVIEWS.name() + "'," + "'" + UserList.TYPE.LEAD_LISTVIEWS.name() + "'";
 		String findContactListIdsQuery = " select ul.user_list_id from xt_user_list ul,xt_user_userlist uul where ul.user_list_id = uul.user_list_id "
 				+ " and uul.user_id = " + contactId + " and ul.company_id = " + loggedInUserCompanyId
-				+ " and is_partner_userlist  = false and ul.contact_type in (" + contactTypesInString + ")  ";
+				+ " and is_partner_userlist  = false and ul.contact_type in (" + contactTypesInString + ") ";
 		return session.createSQLQuery(findContactListIdsQuery).list();
 	}
 
