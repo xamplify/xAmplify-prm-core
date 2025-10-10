@@ -24,7 +24,6 @@ public class HibernateGodaddyConfigurationDao implements GoDaddyConfigurationDao
 		query.setParameter("companyId", companyId);
 		query.setParameter("domainName", domainName);
 		query.setParameter("isConnected", isConnected);
-		//query.setParameter("isSpfConfigured", isConnected);
 		query.executeUpdate();
 	}
 
