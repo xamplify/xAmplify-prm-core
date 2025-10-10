@@ -13,6 +13,7 @@ import com.xtremand.godaddy.dao.GoDaddyConfigurationDao;
 @Transactional
 public class HibernateGodaddyConfigurationDao implements GoDaddyConfigurationDao{
 	
+	private final static String COMPANY_ID = "companyId";
 	@Autowired
 	SessionFactory sessionFactory;
 	
@@ -21,7 +22,7 @@ public class HibernateGodaddyConfigurationDao implements GoDaddyConfigurationDao
 		Session session = sessionFactory.getCurrentSession();
 		String sql = "update xt_company_profile set is_domain_connected = :isConnected,godaddy_domain_name = :domainName where company_id = :companyId";
 		Query query = session.createSQLQuery(sql);
-		query.setParameter("companyId", companyId);
+		query.setParameter(COMPANY_ID, companyId);
 		query.setParameter("domainName", domainName);
 		query.setParameter("isConnected", isConnected);
 		query.executeUpdate();
@@ -31,7 +32,7 @@ public class HibernateGodaddyConfigurationDao implements GoDaddyConfigurationDao
 	public boolean isGodaddyConfigured(Integer companyId) {
 		Session session = sessionFactory.getCurrentSession();
 		String sql = "select is_domain_connected from xt_company_profile where company_id=:companyId";
-		return (boolean) session.createSQLQuery(sql).setParameter("companyId", companyId).uniqueResult();
+		return (boolean) session.createSQLQuery(sql).setParameter(COMPANY_ID, companyId).uniqueResult();
 
 	}
 	
@@ -39,7 +40,7 @@ public class HibernateGodaddyConfigurationDao implements GoDaddyConfigurationDao
 	public String getDomainName(Integer companyId) {
 		Session session = sessionFactory.getCurrentSession();
 		String sql = "select godaddy_domain_name from xt_company_profile where company_id=:companyId";
-		return (String) session.createSQLQuery(sql).setParameter("companyId", companyId).uniqueResult();
+		return (String) session.createSQLQuery(sql).setParameter(COMPANY_ID, companyId).uniqueResult();
 	}
 
 }
