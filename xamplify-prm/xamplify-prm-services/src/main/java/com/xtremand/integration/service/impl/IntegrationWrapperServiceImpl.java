@@ -77,6 +77,12 @@ import com.xtremand.util.service.UtilService;
 @Transactional
 public class IntegrationWrapperServiceImpl implements IntegrationWrapperService {
 
+	private static final String NUMBER = "number";
+
+	private static final String PERCENT = "percent";
+
+	private static final String SELECT = "select";
+
 	private static final String NOT_AVAILABLE = "Not Available";
 
 	@Autowired
@@ -379,9 +385,9 @@ public class IntegrationWrapperServiceImpl implements IntegrationWrapperService 
 		boolean showLabel = false;
 		FormLabelDTO matchedFormLabelDTO = utilService.getMatchedObject(formLabelDTO, formLabelDTOsToCompare);
 		if (matchedFormLabelDTO != null) {
-			if (matchedFormLabelDTO.getLabelType().equals("select")
+			if (matchedFormLabelDTO.getLabelType().equals(SELECT)
 					|| matchedFormLabelDTO.getLabelType().equals("radio")) {
-				if (formLabelDTO.getLabelType().equals("select") || formLabelDTO.getLabelType().equals("radio")) {
+				if (formLabelDTO.getLabelType().equals(SELECT) || formLabelDTO.getLabelType().equals("radio")) {
 					List<FormChoiceDTO> ch1 = matchedFormLabelDTO.getDropDownChoices();
 					List<FormChoiceDTO> ch2 = formLabelDTO.getDropDownChoices();
 					List<String> ch1Names = ch1.stream().map(FormChoiceDTO::getName).collect(Collectors.toList());
@@ -392,8 +398,8 @@ public class IntegrationWrapperServiceImpl implements IntegrationWrapperService 
 						showLabel = true;
 						removeMatchedFormLabelDTO(formLabelDTO, matchedFormLabelDTO, formLabelDTONames);
 					}
-				} else if (formLabelDTO.getLabelType().equals("percent")
-						|| formLabelDTO.getLabelType().equals("number")) {
+				} else if (formLabelDTO.getLabelType().equals(PERCENT)
+						|| formLabelDTO.getLabelType().equals(NUMBER)) {
 					if (!isNumberDropdown(matchedFormLabelDTO)) {
 						showLabel = true;
 					}
@@ -424,11 +430,11 @@ public class IntegrationWrapperServiceImpl implements IntegrationWrapperService 
 				} else {
 					showLabel = true;
 				}
-			} else if (matchedFormLabelDTO.getLabelType().equals("percent")) {
-				if (formLabelDTO.getLabelType().equals("percent")) {
+			} else if (matchedFormLabelDTO.getLabelType().equals(PERCENT)) {
+				if (formLabelDTO.getLabelType().equals(PERCENT)) {
 					showLabel = true;
 					removeMatchedFormLabelDTO(formLabelDTO, matchedFormLabelDTO, formLabelDTONames);
-				} else if (formLabelDTO.getLabelType().equals("select")) {
+				} else if (formLabelDTO.getLabelType().equals(SELECT)) {
 					showLabel = true;
 					if (isNumberDropdown(formLabelDTO)) {
 						removeMatchedFormLabelDTO(formLabelDTO, matchedFormLabelDTO, formLabelDTONames);
@@ -507,11 +513,11 @@ public class IntegrationWrapperServiceImpl implements IntegrationWrapperService 
 						&& !formLabelDTO.getLabelType().equals("textarea")) {
 					showLabel = true;
 				}
-			} else if (matchedFormLabelDTO.getLabelType().equals("number")) {
-				if (formLabelDTO.getLabelType().equals("number")) {
+			} else if (matchedFormLabelDTO.getLabelType().equals(NUMBER)) {
+				if (formLabelDTO.getLabelType().equals(NUMBER)) {
 					showLabel = true;
 					removeMatchedFormLabelDTO(formLabelDTO, matchedFormLabelDTO, formLabelDTONames);
-				} else if (formLabelDTO.getLabelType().equals("select")) {
+				} else if (formLabelDTO.getLabelType().equals(SELECT)) {
 					showLabel = true;
 					if (isNumberDropdown(formLabelDTO)) {
 						removeMatchedFormLabelDTO(formLabelDTO, matchedFormLabelDTO, formLabelDTONames);
