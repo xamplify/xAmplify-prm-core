@@ -105,6 +105,8 @@ import com.xtremand.vendor.bom.VendorDTO;
 @Service("LeadService")
 @Transactional
 public class LeadServiceImpl implements LeadService {
+	private static final String USER_ID = "userId";
+
 	private static final String TOTAL_RECORDS = "totalRecords";
 
 	private static final String UNAUTHORIZED = "UnAuthorized";
@@ -244,7 +246,7 @@ public class LeadServiceImpl implements LeadService {
 			IntegrationType activeCRMIntegrationType) {
 		if (lead != null && sfCfData != null && !sfCfData.isEmpty()) {
 			List<SfCustomFieldsData> sfCustomFieldsDataList = new ArrayList<>();
-			Form form = getActiveCRMCustomForm(lead.getCreatedForCompany().getId(), activeCRMIntegrationType);
+			Form form = getActiveCRMCustomForm(lead.getCreatedForCompany().getId());
 			if (form != null) {
 				for (SfCustomFieldsDataDTO sfCfDataDto : sfCfData) {
 					FormLabel formLabel = formDao.getFormLabelByFormIdAndLabelId(form, sfCfDataDto.getSfCfLabelId());
@@ -348,7 +350,7 @@ public class LeadServiceImpl implements LeadService {
 		}
 	}
 
-	private Form getActiveCRMCustomForm(Integer companyId, IntegrationType activeCRMIntegrationType) {
+	private Form getActiveCRMCustomForm(Integer companyId) {
 		Form form = null;
 		if (companyId != null) {
 			Integer formId = null;
@@ -467,7 +469,7 @@ public class LeadServiceImpl implements LeadService {
 	private void setAssociatedUser(Lead lead, LeadDto leadDto, Integer loggedInUserId) {
 		if (leadDto.getAssociatedUserId() != null && leadDto.getAssociatedUserId() > 0) {
 			User associatedUser = userService.loadUser(
-					Arrays.asList(new Criteria("userId", OPERATION_NAME.eq, leadDto.getAssociatedUserId())),
+					Arrays.asList(new Criteria(USER_ID, OPERATION_NAME.eq, leadDto.getAssociatedUserId())),
 					new FindLevel[] { FindLevel.COMPANY_PROFILE });
 			lead.setAssociatedUser(associatedUser);
 		} else {
@@ -555,7 +557,7 @@ public class LeadServiceImpl implements LeadService {
 	private void fillCreatedByDetails(Lead lead) {
 
 		User createdUser = userService.loadUser(
-				Arrays.asList(new Criteria("userId", OPERATION_NAME.eq, lead.getCreatedBy())),
+				Arrays.asList(new Criteria(USER_ID, OPERATION_NAME.eq, lead.getCreatedBy())),
 				new FindLevel[] { FindLevel.COMPANY_PROFILE });
 		if (createdUser != null) {
 			String name = "";
@@ -576,7 +578,7 @@ public class LeadServiceImpl implements LeadService {
 
 	private void fillCreatedByDetailsInDTO(LeadDto leadDto, Lead lead) {
 		User createdUser = userService.loadUser(
-				Arrays.asList(new Criteria("userId", OPERATION_NAME.eq, lead.getCreatedBy())),
+				Arrays.asList(new Criteria(USER_ID, OPERATION_NAME.eq, lead.getCreatedBy())),
 				new FindLevel[] { FindLevel.COMPANY_PROFILE });
 		if (createdUser != null) {
 			String name = "";
@@ -748,8 +750,6 @@ public class LeadServiceImpl implements LeadService {
 		Boolean canUpdate = false;
 		if (lead != null && loggedInUserId != null) {
 			List<Integer> superiorIds = partnershipDAO.getSuperiorIds(lead.getCreatedByCompany().getId());
-			// List<Integer> adminIds =
-			// userService.getOrgAdminIds(socialStatus.getUserId());
 			if (superiorIds.contains(loggedInUserId) || lead.getCreatedBy().intValue() == loggedInUserId.intValue()) {
 				canUpdate = true;
 			}
@@ -2463,8 +2463,7 @@ public class LeadServiceImpl implements LeadService {
 
 	@Override
 	public ModuleAccess findCompanyAccess(Integer companyId, String companyProfileName) {
-		ModuleAccess moduleAccess = leadDAO.getCompanyAccess(companyId);
-		return moduleAccess;
+		return leadDAO.getCompanyAccess(companyId);
 	}
 
 }
