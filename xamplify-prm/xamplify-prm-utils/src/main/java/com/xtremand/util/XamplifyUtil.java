@@ -1546,6 +1546,14 @@ public class XamplifyUtil {
 			return Optional.empty();
 		}
 	}
+	
+	public static String getEmailBaseDomain(String emailId) {
+		String emailBaseDomain = emailId.substring(emailId.indexOf("@") + 1, emailId.lastIndexOf(".")).toLowerCase();
+		if (emailBaseDomain.contains(".")) {
+			emailBaseDomain = getEmailBaseDomain(emailBaseDomain);
+		}
+		return emailBaseDomain;
+	}
 
 
 }
