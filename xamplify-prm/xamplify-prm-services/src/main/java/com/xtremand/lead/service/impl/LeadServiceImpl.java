@@ -1516,7 +1516,7 @@ public class LeadServiceImpl implements LeadService {
 
 	@Override
 	public List<String> getStageNamesForVendor(Integer loggedInUserId) {
-		List<String> stageNames = new ArrayList<String>();
+		List<String> stageNames = new ArrayList<>();
 
 		if (loggedInUserId != null && loggedInUserId > 0) {
 			Integer companyId = userService.getCompanyIdByUserId(loggedInUserId);
@@ -1530,8 +1530,7 @@ public class LeadServiceImpl implements LeadService {
 
 	@Override
 	public List<String> getStageNamesForPartner(Integer loggedInUserId) {
-		// TODO Auto-generated method stub
-		List<String> stageNames = new ArrayList<String>();
+		List<String> stageNames = new ArrayList<>();
 		if (loggedInUserId != null && loggedInUserId > 0) {
 			Integer companyId = userService.getCompanyIdByUserId(loggedInUserId);
 			if (companyId != null && companyId > 0) {
@@ -1543,7 +1542,6 @@ public class LeadServiceImpl implements LeadService {
 
 	@Override
 	public List<String> getStageNamesForPartnerInCampaign(Integer loggedInUserId) {
-		// TODO Auto-generated method stub
 		List<String> stageNames = new ArrayList<String>();
 		if (loggedInUserId != null && loggedInUserId > 0) {
 			Integer companyId = userService.getCompanyIdByUserId(loggedInUserId);
