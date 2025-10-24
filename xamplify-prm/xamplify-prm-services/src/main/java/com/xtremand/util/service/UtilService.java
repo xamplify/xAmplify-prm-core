@@ -5112,6 +5112,12 @@ public class UtilService {
 		} else {
 			baseUrl = HOST;
 		}
+		String endpoint = addProxyEndPoint(assetPath);
+		String proxyUrl = baseUrl + "xamplify-prm-api" + "/api/pdf" + endpoint + "?pdfUrl=" + encodedUrl;
+		return proxyUrl;
+	}
+
+	private String addProxyEndPoint(String assetPath) {
 		String endpoint = "";
 		if (assetPath.endsWith(".csv")) {
 			endpoint = "/convertCsvToPdf";
@@ -5122,8 +5128,7 @@ public class UtilService {
 		} else {
 			endpoint = "/proxy";
 		}
-		String proxyUrl = baseUrl + "xamplify-prm-api" + "/api/pdf" + endpoint + "?pdfUrl=" + encodedUrl;
-		return proxyUrl;
+		return endpoint;
 	}
 
 	public Set<User> filterDeactivatedUserIds(Integer companyId, Set<User> users) {
