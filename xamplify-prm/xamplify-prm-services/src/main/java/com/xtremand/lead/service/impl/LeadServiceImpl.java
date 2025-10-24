@@ -1945,7 +1945,7 @@ public class LeadServiceImpl implements LeadService {
 		if (existingfields != null) {
 			exisitngFieldsMap = existingfields.stream()
 					.collect(Collectors.toMap(LeadCustomField::getLabelId, Function.identity()));
-		}
+		}  
 
 		for (LeadCustomFieldDto leadField : leadFieldsDto) {
 			if (!exisitngFieldsMap.containsKey(leadField.getLabelId())) {
@@ -2009,8 +2009,6 @@ public class LeadServiceImpl implements LeadService {
 				fieldHeaderMapping.put("Region", "getRegion");
 				fieldHeaderMapping.put("Job Title", "getTitle");
 				fieldHeaderMapping.put("Industry", "getIndustry");
-//				fieldHeaderMapping.put("AccountSubType", "getAccountSubType");
-//				fieldHeaderMapping.put("PartnerType", "getPartnerType");
 			}
 		}
 		/************ XBI-1000 ***********/
