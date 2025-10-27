@@ -628,8 +628,7 @@ public class HibernateContactsV2Dao implements ContactsV2Dao {
 				.add(new QueryParameterDTO(XamplifyConstants.COMPANY_ID, companyId));
 		hibernateSQLQueryResultRequestDTO.getQueryParameterDTOs()
 				.add(new QueryParameterDTO("contactCompanyName", contactCompanyName));
-		hibernateSQLQueryResultUtilDao.getUniqueResult(hibernateSQLQueryResultRequestDTO);
-		return companyId;
+		return hibernateSQLQueryResultUtilDao.getUniqueResult(hibernateSQLQueryResultRequestDTO);
 	}
 
 	@Override

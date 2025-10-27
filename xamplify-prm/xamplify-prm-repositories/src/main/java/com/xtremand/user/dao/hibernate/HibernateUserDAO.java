@@ -293,7 +293,6 @@ public class HibernateUserDAO implements UserDAO {
 
 	@Override
 	public Map<String, Object> find(List<Criteria> criterias, FindLevel[] levels, Pagination pagination) {
-		// TODO Auto-generated method stub
 		return null;
 	}
 
