@@ -112,77 +112,74 @@ public class XamplifyEmailService extends MailService {
 	}
 
 	private void sendEmailUsingJavaMail(MailService.EmailBuilder builder) {
-		if (!emailNotification) {
-			logger.error("Email API disabled. No emails will be sent. {}", new Date());
-			return;
-		}
+	    if (!emailNotification) {
+	        logger.error("Email API disabled. No emails will be sent. {}", new Date());
+	        return;
+	    }
 
-		Properties props = new Properties();
-		props.put("mail.smtp.auth", "true");
-		props.put("mail.smtp.starttls.enable", "true");
-		props.put("mail.smtp.host", smtpHost);
-		props.put("mail.smtp.port", String.valueOf(smtpPort));
+	    Properties props = new Properties();
+	    props.put("mail.smtp.auth", "true");
+	    props.put("mail.smtp.starttls.enable", "true");
+	    props.put("mail.smtp.starttls.required", "true");
+	    props.put("mail.smtp.host", smtpHost);                 // smtp.gmail.com
+	    props.put("mail.smtp.port", String.valueOf(smtpPort)); // 587
 
-		Session session = Session.getInstance(props, new Authenticator() {
-			@Override
-			protected PasswordAuthentication getPasswordAuthentication() {
-				return new PasswordAuthentication(smtpUsername, smtpPassword);
-			}
-		});
+	    // Force TLS 1.2 and trust Gmail’s cert
+	    props.put("mail.smtp.ssl.protocols", "TLSv1.2");
+	    props.put("mail.smtp.ssl.trust", "smtp.gmail.com");
 
-		try {
-			MimeMessage message = new MimeMessage(session);
+	    Session session = Session.getInstance(props, new Authenticator() {
+	        @Override
+	        protected PasswordAuthentication getPasswordAuthentication() {
+	            return new PasswordAuthentication(smtpUsername, smtpPassword);
+	        }
+	    });
 
-			// From
-			String fromEmailId = builder.getFrom();
-			String senderName = builder.getSenderName() != null ? builder.getSenderName() : mailSender;
-			message.setFrom(new InternetAddress(senderEmail, senderName));
+	    try {
+	        MimeMessage message = new MimeMessage(session);
 
-			// Reply-To handling if DNS not configured
-			if (!userDao.isEmailDnsConfigured(fromEmailId) && !xAmplifySchedulerEmail.equals(fromEmailId)) {
-				message.setReplyTo(new InternetAddress[] { new InternetAddress(fromEmailId) });
-			}
+	        String fromEmailId = builder.getFrom();
+	        String senderName = builder.getSenderName() != null ? builder.getSenderName() : mailSender;
 
-			// To
-			message.addRecipient(Message.RecipientType.TO, new InternetAddress(builder.getTo()));
+	        // Prefer aligning From with the authenticated account or a verified alias
+	        message.setFrom(new InternetAddress(senderEmail, senderName));
 
-			// CC
-			addRecipients(message, builder.getCCEmailIds(), Message.RecipientType.CC);
+	        if (!userDao.isEmailDnsConfigured(fromEmailId) && !xAmplifySchedulerEmail.equals(fromEmailId)) {
+	            message.setReplyTo(new InternetAddress[] { new InternetAddress(fromEmailId) });
+	        }
 
-			// BCC
-			addRecipients(message, builder.getBCCEmailIds(), Message.RecipientType.BCC);
+	        message.addRecipient(Message.RecipientType.TO, new InternetAddress(builder.getTo()));
+	        addRecipients(message, builder.getCCEmailIds(), Message.RecipientType.CC);
+	        addRecipients(message, builder.getBCCEmailIds(), Message.RecipientType.BCC);
 
-			message.setSubject(builder.getSubject());
+	        message.setSubject(builder.getSubject());
 
-			// Body + Attachments
-			Multipart multipart = new MimeMultipart();
+	        Multipart multipart = new MimeMultipart();
 
-			MimeBodyPart bodyPart = new MimeBodyPart();
-			bodyPart.setContent(builder.getBody(), "text/html; charset=utf-8");
-			multipart.addBodyPart(bodyPart);
+	        MimeBodyPart bodyPart = new MimeBodyPart();
+	        bodyPart.setContent(builder.getBody(), "text/html; charset=utf-8");
+	        multipart.addBodyPart(bodyPart);
 
-			if (XamplifyUtils.isNotEmptyList(builder.getAttachments())) {
-				for (MultipartFile file : builder.getAttachments()) {
-					MimeBodyPart attachmentPart = new MimeBodyPart();
-					DataSource source = new ByteArrayDataSource(file.getBytes(), file.getContentType());
-					attachmentPart.setDataHandler(new DataHandler(source));
-					attachmentPart.setFileName(file.getOriginalFilename());
-					multipart.addBodyPart(attachmentPart);
-				}
-			}
+	        if (XamplifyUtils.isNotEmptyList(builder.getAttachments())) {
+	            for (MultipartFile file : builder.getAttachments()) {
+	                MimeBodyPart attachmentPart = new MimeBodyPart();
+	                DataSource source = new ByteArrayDataSource(file.getBytes(), file.getContentType());
+	                attachmentPart.setDataHandler(new DataHandler(source));
+	                attachmentPart.setFileName(file.getOriginalFilename());
+	                multipart.addBodyPart(attachmentPart);
+	            }
+	        }
 
-			message.setContent(multipart);
+	        message.setContent(multipart);
 
-			// Send
-			Transport.send(message);
-			builder.setStatusCode(200);
+	        Transport.send(message);
+	        builder.setStatusCode(200);
 
-		} catch (MessagingException | IOException e) {
-			builder.setStatusCode(500);
-			throw new MailException(e);
-		}
+	    } catch (MessagingException | IOException e) {
+	        builder.setStatusCode(500);
+	        throw new MailException(e);
+	    }
 	}
-
 	private void addRecipients(MimeMessage message, List<String> emailIds, Message.RecipientType type)
 			throws MessagingException {
 		if (XamplifyUtils.isNotEmptyList(emailIds)) {
