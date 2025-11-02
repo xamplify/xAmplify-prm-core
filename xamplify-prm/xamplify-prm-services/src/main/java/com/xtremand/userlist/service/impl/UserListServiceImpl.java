@@ -211,9 +211,6 @@ public class UserListServiceImpl implements UserListService {
 	@Autowired
 	private HibernateSQLQueryResultUtilDao hibernateSQLQueryResultUtilDao;
 
-	@Autowired
-	private UserDAO userDao;
-
 	@Value("${duplicate.partner.email.id}")
 	private String duplicatePartnerEmailIdMessage;
 
@@ -244,6 +241,13 @@ public class UserListServiceImpl implements UserListService {
 	String messageTemplate = "<span><strong><u><contactlistname></u></strong> is being used in one or more campaigns ( <campaigns_names> ) which haven't been launched. Please launch or delete those campaigns first.</span>";
 
 	private static final String FAILED = "Failed";
+
+	private static final String ACCESS = "access";
+
+	private static final String SHARE_LEADS = "SHARE LEADS";
+
+	private static final String LIST_OF_USERS = "listOfUsers";
+
 	private static final String INVALID_INPUT = "Invalid Input";
 
 	@Autowired
@@ -270,7 +274,7 @@ public class UserListServiceImpl implements UserListService {
 				new FindLevel[] { FindLevel.CAMPAIGNS, FindLevel.COMPANY_PROFILE });
 		UserList userList = userLists.iterator().next();
 		boolean access = false;
-		if (userList.getModuleName().equalsIgnoreCase("SHARE LEADS")) {
+		if (userList.getModuleName().equalsIgnoreCase(SHARE_LEADS)) {
 			access = utilService.hasShareLeadsModuleAccess(userId);
 		} else {
 			access = getAccess(userList.isPartnerUserList(), userId, false);
@@ -278,7 +282,7 @@ public class UserListServiceImpl implements UserListService {
 		if (Boolean.TRUE.equals(userList.isPartnerUserList())) {
 			userList.setDeleteTeamMemberPartnerList(deleteTeamMemberPartnerList);
 			xtremandResponse = removePartnerList(access, userList, xtremandResponse);
-		} else if (userList.getModuleName().equalsIgnoreCase("SHARE LEADS")) {
+		} else if (userList.getModuleName().equalsIgnoreCase(SHARE_LEADS)) {
 			xtremandResponse = removeSharedLeadsList(access, userList, userId, xtremandResponse);
 		} else {
 			xtremandResponse = removeContactList(access, userList, xtremandResponse);
@@ -336,7 +340,7 @@ public class UserListServiceImpl implements UserListService {
 
 				for (Integer partnerId : sharedPartnerIds) {
 					User partner = userService.loadUser(
-							Arrays.asList(new Criteria("userId", OPERATION_NAME.eq, partnerId)),
+							Arrays.asList(new Criteria(XamplifyConstants.USER_ID, OPERATION_NAME.eq, partnerId)),
 							new FindLevel[] { FindLevel.SHALLOW });
 					mailService.sendLeadsListDeleteMail(partner, userList, "lead_list_delete_message", null);
 				}
@@ -370,12 +374,12 @@ public class UserListServiceImpl implements UserListService {
 			UserList userList = userListDAO.findByPrimaryKey(userListDto.getId(),
 					new FindLevel[] { FindLevel.COMPANY_PROFILE, FindLevel.USER_USER_LIST });
 			boolean assignLeads = false;
-			if (userList.getModuleName().equalsIgnoreCase("SHARE LEADS")) {
+			if (userList.getModuleName().equalsIgnoreCase(SHARE_LEADS)) {
 				assignLeads = true;
 			}
 			boolean access = getAccess(userList.isPartnerUserList(), customerId, assignLeads);
 			if (!access) {
-				resultMap.put("access", false);
+				resultMap.put(ACCESS, false);
 				return resultMap;
 			}
 			if (userList != null) {
@@ -390,7 +394,7 @@ public class UserListServiceImpl implements UserListService {
 				}
 
 				String csvPath = "";
-				if (userList.getModuleName().equalsIgnoreCase("SHARE LEADS")) {
+				if (userList.getModuleName().equalsIgnoreCase(SHARE_LEADS)) {
 					csvPath = fileUtil.uploadContactsCsvFile(userList.getName(), users,
 							userList.getAssignedCompany().getId());
 				} else {
@@ -421,7 +425,7 @@ public class UserListServiceImpl implements UserListService {
 					xtremandResponse = saveContactList(users, customerId, userListDto, xtremandResponse);
 					resultMap.put("statusCode", xtremandResponse.getStatusCode());
 					if (xtremandResponse.getStatusCode() == 200
-							&& userListDto.getModuleName().equalsIgnoreCase("SHARE LEADS")) {
+							&& userListDto.getModuleName().equalsIgnoreCase(SHARE_LEADS)) {
 						resultMap.put("message", "LEADS LIST UPDATED SUCCESSFULLY");
 					} else if (xtremandResponse.getStatusCode() == 200
 							&& userListDto.getModuleName().equalsIgnoreCase("CONTACTS")) {
@@ -431,7 +435,7 @@ public class UserListServiceImpl implements UserListService {
 					} else if (xtremandResponse.getStatusCode() == 401) {
 						resultMap.put("message", xtremandResponse.getMessage());
 					}
-					resultMap.put("access", true);
+					resultMap.put(ACCESS, true);
 					return resultMap;
 				}
 			}
@@ -461,7 +465,7 @@ public class UserListServiceImpl implements UserListService {
 			resultMap.put("statusCode", 418);
 		}
 		resultMap.put("invalidEmailIds", invalidEmailIds);
-		resultMap.put("access", true);
+		resultMap.put(ACCESS, true);
 		return resultMap;
 	}
 
@@ -508,7 +512,7 @@ public class UserListServiceImpl implements UserListService {
 
 		genericDAO.flushCurrentSession();
 
-		if (userList.getModuleName().equalsIgnoreCase("SHARE LEADS")) {
+		if (userList.getModuleName().equalsIgnoreCase(SHARE_LEADS)) {
 			List<Integer> totalUnsubscribedUserIds = userListDAO
 					.getUnsubscribedUsers(userList.getAssignedCompany().getId());
 			if (!userList.isEmailValidationInd() || !(nonProcessedUsers.isEmpty())) {
@@ -530,7 +534,7 @@ public class UserListServiceImpl implements UserListService {
 		}
 
 		Map<String, Object> resultMap = getUpdateContactListResult();
-		if (userList.getModuleName().equalsIgnoreCase("SHARE LEADS")) {
+		if (userList.getModuleName().equalsIgnoreCase(SHARE_LEADS)) {
 			resultMap.put("message", "LEADS LIST UPDATED SUCCESSFULLY");
 		} else {
 			resultMap.put("message", "CONTACT LIST UPDATED SUCCESSFULLY");
@@ -544,7 +548,7 @@ public class UserListServiceImpl implements UserListService {
 	public Map<String, Object> getUpdateContactListResult() {
 		Map<String, Object> resultMap = new HashMap<>();
 		resultMap.put("statusCode", 200);
-		resultMap.put("access", true);
+		resultMap.put(ACCESS, true);
 		return resultMap;
 	}
 
@@ -589,10 +593,10 @@ public class UserListServiceImpl implements UserListService {
 					updateSetValues(userPaginationWrapper, userId, customer, userList, user, pagination, legalBasisIds,
 							userListOperationsAsyncDTO);
 
-					resultMap.put("access", true);
+					resultMap.put(ACCESS, true);
 				}
 			} else {
-				resultMap.put("access", false);
+				resultMap.put(ACCESS, false);
 			}
 			resultMap.put("message", "User Details UPDATED SUCCESSFULLY");
 			return resultMap;
@@ -624,7 +628,7 @@ public class UserListServiceImpl implements UserListService {
 
 	private boolean findAccess(Integer userId, UserList userList) {
 		boolean access = false;
-		if (userList.getModuleName().equalsIgnoreCase("SHARE LEADS")) {
+		if (userList.getModuleName().equalsIgnoreCase(SHARE_LEADS)) {
 			access = utilService.hasShareLeadsModuleAccess(userId);
 		} else {
 			access = getAccess(userList.isPartnerUserList(), userId, false);
@@ -705,7 +709,7 @@ public class UserListServiceImpl implements UserListService {
 	private boolean validateModuleAndUpdateLegalBasisOptions(User customer, UserList userList, User user,
 			UserUserList userUserList) {
 		boolean isGdprEnabled = false;
-		boolean isShareLeadsModule = userList.getModuleName().equalsIgnoreCase("SHARE LEADS");
+		boolean isShareLeadsModule = userList.getModuleName().equalsIgnoreCase(SHARE_LEADS);
 		boolean isContactsModule = userList.getModuleName().equalsIgnoreCase("CONTACTS");
 		boolean isPartnersModule = userList.getModuleName().equalsIgnoreCase("PARTNERS");
 		if (isShareLeadsModule) {
@@ -883,7 +887,7 @@ public class UserListServiceImpl implements UserListService {
 			userListDto.setId(userList.getId());
 			userListDto.setName(userList.getName());
 
-			if (userList.getModuleName().equalsIgnoreCase("SHARE LEADS")) {
+			if (userList.getModuleName().equalsIgnoreCase(SHARE_LEADS)) {
 				userListDto.setUploadedBy(getCustomerFullName(userList.getAssignedBy()));
 				userListDto.setCompanyName(userList.getAssignedBy().getCompanyProfile().getCompanyName());
 				userListDto.setUploadedUserId(userList.getAssignedBy().getUserId());
@@ -941,7 +945,7 @@ public class UserListServiceImpl implements UserListService {
 		List<Integer> userListIds = getUserListIds(user, userListDTO);
 		pagination.setUserId(userId);
 		pagination.setTeamMemberAnalytics(true);
-		if (userListIds.size() > 10000 && userListDTO.getModuleName().equalsIgnoreCase("contacts")) {
+		if (userListIds.size() > 10000 && userListDTO.getModuleName().equalsIgnoreCase(XamplifyUtils.CONTACTS)) {
 			userListIds = utilDao.getDefaultMasterContactListIdByUserId(userId);
 		}
 		if (userListIds != null && !userListIds.isEmpty()) {
@@ -952,8 +956,8 @@ public class UserListServiceImpl implements UserListService {
 		} else {
 			Map<String, Object> resultMap = new HashMap<>();
 			List<UserDTO> emptyList = new ArrayList<>();
-			resultMap.put("listOfUsers", emptyList);
-			resultMap.put("totalRecords", 0);
+			resultMap.put(LIST_OF_USERS, emptyList);
+			resultMap.put(XamplifyConstants.TOTAL_RECORDS, 0);
 			return resultMap;
 		}
 	}
@@ -1002,7 +1006,7 @@ public class UserListServiceImpl implements UserListService {
 			return listUserListscontacts(pagination, userListIds, loggedInUser, userListDTO);
 		} else {
 			Map<String, Object> resultMap = new HashMap<>();
-			resultMap.put("listOfUsers", Collections.emptyList());
+			resultMap.put(LIST_OF_USERS, Collections.emptyList());
 			resultMap.put("totalRecords", 0);
 			return resultMap;
 		}
@@ -1178,13 +1182,13 @@ public class UserListServiceImpl implements UserListService {
 		UserList userList = userLists.iterator().next();
 		removeUserIdsList.removeIf(userId -> userId == null);
 		boolean access = false;
-		if (userList.getModuleName().equalsIgnoreCase("SHARE LEADS")) {
+		if (userList.getModuleName().equalsIgnoreCase(SHARE_LEADS)) {
 			access = utilService.hasShareLeadsModuleAccess(customerId);
 		} else {
 			access = getAccess(userList.isPartnerUserList(), customerId, false);
 		}
 		if (!access) {
-			resultMap.put("access", false);
+			resultMap.put(ACCESS, false);
 			resultMap.put("message", "CONTACT LIST UPDATED SUCCESSFULLY");
 			resultMap.put("statusCode", 201);
 		} else {
@@ -1224,7 +1228,7 @@ public class UserListServiceImpl implements UserListService {
 		}
 
 		if (isEmptyFormList) {
-			resultMap.put("access", true);
+			resultMap.put(ACCESS, true);
 			resultMap.put("isEmptyFormList", true);
 			resultMap.put("message", "CONTACT LIST UPDATED SUCCESSFULLY");
 			resultMap.put("statusCode", 200);
@@ -1274,7 +1278,7 @@ public class UserListServiceImpl implements UserListService {
 	private Map<String, Object> deleteUserList(Integer userListId, Integer customerId, List<Integer> partnerUserIds,
 			Map<String, Object> resultMap, UserList userList) {
 		removeUserList(userListId, customerId, false);
-		resultMap.put("access", true);
+		resultMap.put(ACCESS, true);
 		resultMap.put("message", "CONTACT LIST DELETED SUCCESSFULLY");
 		resultMap.put("statusCode", 200);
 		deletePartnerMappingsTracksAndPlayBooksAndCampaigns(userListId, customerId, partnerUserIds, userList);
@@ -1284,7 +1288,7 @@ public class UserListServiceImpl implements UserListService {
 	private Map<String, Object> deletePartnerFromDefaultMasterPartnerList(Integer userListId, Integer customerId,
 			List<Integer> partnerUserIds, Map<String, Object> resultMap, UserList userList) {
 		partnershipService.deletePartnersFromDefaultUserList(userList, customerId, partnerUserIds);
-		resultMap.put("access", true);
+		resultMap.put(ACCESS, true);
 		resultMap.put("message", "CONTACT LIST DELETED SUCCESSFULLY");
 		resultMap.put("statusCode", 200);
 		deletePartnerMappingsTracksAndPlayBooksAndCampaigns(userListId, customerId, partnerUserIds, userList);
@@ -1297,16 +1301,16 @@ public class UserListServiceImpl implements UserListService {
 			XtremandResponse xtremandResponse = partnershipService.deletePartnersFromUserList(userList, customerId,
 					removeUserIdsList);
 			removeZeroUsersLists(xtremandResponse);
-			resultMap.put("access", true);
+			resultMap.put(ACCESS, true);
 		} else if (Boolean.TRUE.equals(!userList.isPartnerUserList() && access)
-				&& userList.getModuleName().equalsIgnoreCase("SHARE LEADS")) {
+				&& userList.getModuleName().equalsIgnoreCase(SHARE_LEADS)) {
 			deleteLeadsFromLeadsList(userList, customerId, removeUserIdsList);
-			resultMap.put("access", true);
+			resultMap.put(ACCESS, true);
 		} else if (Boolean.TRUE.equals(!userList.isPartnerUserList()) && access) {
 			deleteUsersFromUserList(userList, customerId, removeUserIdsList);
-			resultMap.put("access", true);
+			resultMap.put(ACCESS, true);
 		} else {
-			resultMap.put("access", false);
+			resultMap.put(ACCESS, false);
 		}
 		return resultMap;
 	}
@@ -1363,7 +1367,7 @@ public class UserListServiceImpl implements UserListService {
 				data.add(csvHeaderColumns.toArray(new String[0]));
 			}
 
-			List<UserDTO> totalUsersList = (List<UserDTO>) map.get("listOfUsers");
+			List<UserDTO> totalUsersList = (List<UserDTO>) map.get(LIST_OF_USERS);
 			if (pagination.isPartnerTeamMemberGroupFilter()) {
 				List<Integer> filteredPartnersIdsList = userListDAO
 						.getTeamMemberGroupedPartnerIds(pagination.getUserId());
@@ -1521,7 +1525,7 @@ public class UserListServiceImpl implements UserListService {
 		Criterion creterion1 = Restrictions.and(Restrictions.eq("owner.userId", userId),
 				Restrictions.eq("socialNetwork", socialNetwork), Restrictions.eq("moduleName", "CONTACTS"));
 		Criterion creterion2 = Restrictions.and(Restrictions.eq("assignedBy.userId", userId),
-				Restrictions.eq("socialNetwork", socialNetwork), Restrictions.eq("moduleName", "SHARE LEADS"));
+				Restrictions.eq("socialNetwork", socialNetwork), Restrictions.eq("moduleName", SHARE_LEADS));
 		Criterion condition = Restrictions.or(creterion1, creterion2);
 		criterions.add(condition);
 
@@ -1657,7 +1661,7 @@ public class UserListServiceImpl implements UserListService {
 			UserListDTO userListDTO = userUserListWrapper.getUserList();
 			Set<UserDTO> users = userUserListWrapper.getUsers();
 			if (userListDTO != null && users != null && !users.isEmpty()) {
-				if (userListDTO.getModuleName().equalsIgnoreCase("SHARE LEADS")) {
+				if (userListDTO.getModuleName().equalsIgnoreCase(SHARE_LEADS)) {
 					userListDTO.setAssignedLeadsList(utilService.hasShareLeadsModuleAccess(userId));
 				}
 				boolean access = getAccess(userListDTO.isPartnerUserList(), userId, userListDTO.isAssignedLeadsList());
@@ -1735,7 +1739,7 @@ public class UserListServiceImpl implements UserListService {
 									List<Integer> totalUnsubscribedUserIds = userListDAO
 											.getUnsubscribedUsers(userList.getCompany().getId());
 									sendContactListMail(loggedInUser, userList, totalUnsubscribedUserIds);
-								} else if (userlistDTO.getModuleName().equalsIgnoreCase("SHARE LEADS")) {
+								} else if (userlistDTO.getModuleName().equalsIgnoreCase(SHARE_LEADS)) {
 									List<Integer> totalUnsubscribedUserIds = userListDAO
 											.getUnsubscribedUsers(company.getId());
 									utilService.sendLeadsListMail(loggedInUser, userList, isCreate,
@@ -1762,7 +1766,7 @@ public class UserListServiceImpl implements UserListService {
 		if (users != null) {
 			List<User> nonProcessedUsers = new ArrayList<User>();
 			boolean isGdprOn = false;
-			if (userList.getModuleName().equalsIgnoreCase("SHARE LEADS")) {
+			if (userList.getModuleName().equalsIgnoreCase(SHARE_LEADS)) {
 				isGdprOn = gdprSettingService.isGdprEnabled(loggedInUser.getCompanyProfile().getId());
 			} else {
 				isGdprOn = gdprSettingService.isGdprEnabled(userList.getCompany().getId());
@@ -1867,7 +1871,7 @@ public class UserListServiceImpl implements UserListService {
 			if (userlistDTO.getModuleName().equalsIgnoreCase("CONTACTS")) {
 				userList.setOwner(loggedInUser);
 				userList.setCompany(companyProfile);
-			} else if (userlistDTO.getModuleName().equalsIgnoreCase("SHARE LEADS")) {
+			} else if (userlistDTO.getModuleName().equalsIgnoreCase(SHARE_LEADS)) {
 				userList.setAssignedBy(loggedInUser);
 				userList.setAssignedCompany(companyProfile);
 			}
@@ -2492,7 +2496,7 @@ public class UserListServiceImpl implements UserListService {
 			userList.setAssignedBy(loggedInUser);
 			userList.setAssignedCompany(loggedInUser.getCompanyProfile());
 			userList.setPublicList(true);
-			userList.setModuleName("SHARE LEADS");
+			userList.setModuleName(SHARE_LEADS);
 			userList.setAlias(existingUserList.getAlias());
 			response = validateAssignedList(users, userListDTO.getName(), loggedInUser, response);
 			if (response.getStatusCode() == 200) {
@@ -2531,7 +2535,7 @@ public class UserListServiceImpl implements UserListService {
 				new FindLevel[] { FindLevel.COMPANY_PROFILE });
 		UserList userList = getUserList(userListDTO, vendor);
 		userList.setPublicList(true);
-		userList.setModuleName("SHARE LEADS");
+		userList.setModuleName(SHARE_LEADS);
 		userList.setAlias(userListDTO.getAlias());
 		Long externalListId = userListDTO.getExternalListId();
 		if (externalListId != null && externalListId > 0) {
@@ -2583,7 +2587,7 @@ public class UserListServiceImpl implements UserListService {
 	public XtremandResponse validateAssignedList(Set<UserDTO> users, String listName, User vendor,
 			XtremandResponse xtremandResponse) {
 		Criteria criteria1 = new Criteria("assignedCompany.id", OPERATION_NAME.eq, vendor.getCompanyProfile().getId());
-		Criteria criteria2 = new Criteria("moduleName", OPERATION_NAME.eq, "SHARE LEADS");
+		Criteria criteria2 = new Criteria("moduleName", OPERATION_NAME.eq, SHARE_LEADS);
 		List<Criteria> criterias = new ArrayList<Criteria>();
 		criterias.add(criteria1);
 		criterias.add(criteria2);
@@ -2978,7 +2982,7 @@ public class UserListServiceImpl implements UserListService {
 			mapFlexiFieldsToUserDTO(userListDTO, userDTO);
 		}
 
-		resultMap.put("listOfUsers", userDTOs);
+		resultMap.put(LIST_OF_USERS, userDTOs);
 		resultMap.put("totalRecords", totalRecords);
 		return resultMap;
 	}
@@ -3337,7 +3341,7 @@ public class UserListServiceImpl implements UserListService {
 	public XtremandResponse updateShareListData() {
 		XtremandResponse xtremandResponse = new XtremandResponse();
 		List<Criteria> criterias = new ArrayList<>();
-		Criteria criteria1 = new Criteria("moduleName", OPERATION_NAME.eq, "SHARE LEADS");
+		Criteria criteria1 = new Criteria("moduleName", OPERATION_NAME.eq, SHARE_LEADS);
 		Criteria criteria2 = new Criteria("owner.userId", OPERATION_NAME.isNotNull);
 		Criteria criteria3 = new Criteria("company.id", OPERATION_NAME.isNotNull);
 		criterias.add(criteria1);
@@ -3423,7 +3427,7 @@ public class UserListServiceImpl implements UserListService {
 		} else if (userListDTO.getModuleName().equalsIgnoreCase("PARTNERS")) {
 			xtremandResponse = partnershipService.saveAsPartnerList(null, userId, userListDTO, xtremandResponse, null);
 			xtremandResponse.setAccess(true);
-		} else if (userListDTO.getModuleName().equalsIgnoreCase("SHARE LEADS")) {
+		} else if (userListDTO.getModuleName().equalsIgnoreCase(SHARE_LEADS)) {
 			userListDTO.setAssignedLeadsList(utilService.hasShareLeadsModuleAccess(userId));
 			boolean access = getAccess(userListDTO.isPartnerUserList(), userId, userListDTO.isAssignedLeadsList());
 			if (access) {
@@ -3506,7 +3510,7 @@ public class UserListServiceImpl implements UserListService {
 		}
 
 		Map<String, Object> resultMap = getUpdateContactListResult();
-		if (userList.getModuleName().equalsIgnoreCase("SHARE LEADS")) {
+		if (userList.getModuleName().equalsIgnoreCase(SHARE_LEADS)) {
 			resultMap.put("message", "LEADS LIST UPDATED SUCCESSFULLY");
 		} else {
 			resultMap.put("message", "CONTACT LIST UPDATED SUCCESSFULLY");
@@ -3665,7 +3669,7 @@ public class UserListServiceImpl implements UserListService {
 		DownloadItem listName = null;
 		if (moduleName.equalsIgnoreCase("partners")) {
 			listName = DownloadItem.PARTNER_LIST;
-		} else if (moduleName.equalsIgnoreCase("contacts")) {
+		} else if (moduleName.equalsIgnoreCase(XamplifyUtils.CONTACTS)) {
 			listName = DownloadItem.CONTACT_LIST;
 		} else if (moduleName.equalsIgnoreCase("leads")) {
 			listName = DownloadItem.SHARE_LEADS;
@@ -3677,7 +3681,7 @@ public class UserListServiceImpl implements UserListService {
 		DownloadDataInfo downloadDataInfo = utilDao.getDownloadDataInfo(userId, listName);
 		if (downloadDataInfo == null || !downloadDataInfo.isDownloadInProgress()) {
 			downloadDataInfo = utilDao.updateDownloadDataInfo(userId, downloadDataInfo, listName);
-			if (moduleName.equalsIgnoreCase("contacts") || moduleName.equalsIgnoreCase("sharedleads")
+			if (moduleName.equalsIgnoreCase(XamplifyUtils.CONTACTS) || moduleName.equalsIgnoreCase("sharedleads")
 					|| moduleName.equalsIgnoreCase("leads")) {
 				response.setMessage(
 						"We are processing your list(s) reports. We will send it over an email when the report is ready");
@@ -3902,7 +3906,7 @@ public class UserListServiceImpl implements UserListService {
 							userListDTO.isVanityUrlFilter(), isLoginAsPartner);
 				} else if (userListDTO.isAssignedLeadsList()) {
 					Criteria criteria1 = new Criteria("assignedCompany.id", OPERATION_NAME.eq, loggedInUserCompanyId);
-					Criteria criteria2 = new Criteria("moduleName", OPERATION_NAME.eq, "SHARE LEADS");
+					Criteria criteria2 = new Criteria("moduleName", OPERATION_NAME.eq, SHARE_LEADS);
 					Criteria criteria3 = new Criteria("emailValidationInd", OPERATION_NAME.eq, true);
 					criterias.add(criteria1);
 					criterias.add(criteria2);
@@ -4127,7 +4131,7 @@ public class UserListServiceImpl implements UserListService {
 	@Override
 	public XtremandResponse getWelcomeEmailsList(Integer userId, Pagination pagination) {
 		XtremandResponse response = new XtremandResponse();
-		Integer loggedInUserCompanyId = userDao.getCompanyIdByUserId(userId);
+		Integer loggedInUserCompanyId = userDAO.getCompanyIdByUserId(userId);
 		response.setData(userDAO.getWelcomeEmailsList(loggedInUserCompanyId, pagination));
 		response.setStatusCode(200);
 		return response;
@@ -4137,7 +4141,7 @@ public class UserListServiceImpl implements UserListService {
 	public HttpServletResponse downloadWelcomeEmailsList(Pageable pageable, Integer userId,
 			HttpServletResponse response) {
 		Pagination pagination = new Pagination();
-		Integer loggedInUserCompanyId = userDao.getCompanyIdByUserId(userId);
+		Integer loggedInUserCompanyId = userDAO.getCompanyIdByUserId(userId);
 		pagination.setUserId(loggedInUserCompanyId);
 		String sort = pageable.getSort();
 		if (sort != null && org.springframework.util.StringUtils.hasText(sort)) {
@@ -4149,7 +4153,7 @@ public class UserListServiceImpl implements UserListService {
 		pagination.setSearchKey(pageable.getSearch());
 		String fileName = "Welcome Emails Report";
 		if (pagination != null && pagination.getUserId() != null && pagination.getUserId() > 0) {
-			Map<String, Object> resultMap = userDao.downloadWelcomeEmailsList(pagination);
+			Map<String, Object> resultMap = userDAO.downloadWelcomeEmailsList(pagination);
 			@SuppressWarnings("unchecked")
 			List<EmailActivityDTO> emailsList = (List<EmailActivityDTO>) resultMap.get("data");
 			return frameSendWelcomeEmailCSVData(response, fileName, emailsList, pagination);
