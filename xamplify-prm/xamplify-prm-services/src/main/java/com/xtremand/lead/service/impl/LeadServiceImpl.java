@@ -105,6 +105,10 @@ import com.xtremand.vendor.bom.VendorDTO;
 @Service("LeadService")
 @Transactional
 public class LeadServiceImpl implements LeadService {
+	private static final String ACCOUNT_SUB_TYPE = "account_sub_type";
+
+	private static final String PARTNER_TYPE = "partner_type";
+
 	private static final String USER_ID = "userId";
 
 	private static final String TOTAL_RECORDS = "totalRecords";
@@ -1688,7 +1692,7 @@ public class LeadServiceImpl implements LeadService {
 				if (pagination.getVendorCompanyId() != null && pagination.getVendorCompanyId() > 0) {
 					Boolean isVendorEnabledLeadApprovalRejectionFeature = (Boolean) userDao
 							.getLeadApprovalStatus(pagination.getVendorCompanyId());
-					if (!isVendorEnabledLeadApprovalRejectionFeature
+					if (Boolean.TRUE.equals(!isVendorEnabledLeadApprovalRejectionFeature)
 							|| pagination.getCompanyId().equals(pagination.getVendorCompanyId())) {
 						pagination.setLeadApprovalFeatureEnabledForVendorCompany(true);
 					}
@@ -1988,7 +1992,7 @@ public class LeadServiceImpl implements LeadService {
 		LinkedHashMap<String, String> fieldHeaderMapping = new LinkedHashMap<>();
 		ArrayList<String> headers = new ArrayList<>(Arrays.asList("first_name", "last_name", "email", "company",
 				"phone", "website", "address", "city", "postalCode", "state", "country", "region", "title", "industry",
-				"partner_type", "account_sub_type"));
+				PARTNER_TYPE, ACCOUNT_SUB_TYPE));
 		if (vanityUrlFilter) {
 			Integer companyId = userDao.getCompanyIdByProfileName(vendorCompanyProfileName);
 			fieldHeaderMapping = setFieldHeaderMappingByCompanyId(fieldHeaderMapping, headers, companyId, userType);
@@ -2011,8 +2015,6 @@ public class LeadServiceImpl implements LeadService {
 				fieldHeaderMapping.put("Region", "getRegion");
 				fieldHeaderMapping.put("Job Title", "getTitle");
 				fieldHeaderMapping.put("Industry", "getIndustry");
-//				fieldHeaderMapping.put("AccountSubType", "getAccountSubType");
-//				fieldHeaderMapping.put("PartnerType", "getPartnerType");
 			}
 		}
 		/************ XBI-1000 ***********/
@@ -2090,11 +2092,11 @@ public class LeadServiceImpl implements LeadService {
 			if (header.equalsIgnoreCase("industry")) {
 				fieldHeaderMapping.put("Industry", "getIndustry");
 			}
-			if (header.equalsIgnoreCase("account_sub_type")) {
-				fieldHeaderMapping.put("account_sub_type", "getAccountSubType");
+			if (header.equalsIgnoreCase(ACCOUNT_SUB_TYPE)) {
+				fieldHeaderMapping.put(ACCOUNT_SUB_TYPE, "getAccountSubType");
 			}
-			if (header.equalsIgnoreCase("partner_type")) {
-				fieldHeaderMapping.put("partner_type", "getPartnerType");
+			if (header.equalsIgnoreCase(PARTNER_TYPE)) {
+				fieldHeaderMapping.put(PARTNER_TYPE, "getPartnerType");
 			}
 		}
 		if ("v".equals(userType)) {
@@ -2110,7 +2112,7 @@ public class LeadServiceImpl implements LeadService {
 			List<FormLabel> activeCRMCFLabels = utilService.getLeadCustomFormLabelsByIntegrationType(activeCRMCompanyId,
 					activeCRMIntegrationType);
 
-			List<FormLabel> otherActiveCRMCFLabels = new ArrayList<FormLabel>();
+			List<FormLabel> otherActiveCRMCFLabels = new ArrayList<>();
 			if (otherActiveCRMIntegration != null) {
 				otherActiveCRMCFLabels = utilService.getLeadCustomFormLabelsByIntegrationType(
 						otherActiveCRMIntegration.getCompany().getId(), otherActiveCRMIntegration.getType());
