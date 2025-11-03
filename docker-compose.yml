@@ -1,0 +1,34 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:12
+    environment:
+      POSTGRES_DB: xamplify-prm
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: Xtremand12
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./Database/xAmplify-prm-schema.backup:/docker-entrypoint-initdb.d/01-restore.backup
+      - ./restore-db.sh:/docker-entrypoint-initdb.d/02-restore-db.sh
+      - ./fix-oauth.sql:/docker-entrypoint-initdb.d/03-fix-oauth.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d xamplify-prm"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    
+  app:
+    build: .
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      - SPRING_PROFILES_ACTIVE=production
+
+volumes:
+  postgres_data:
