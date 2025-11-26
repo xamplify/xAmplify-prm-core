@@ -936,7 +936,7 @@ public class ApplicationRootConfig extends WebMvcConfigurerAdapter implements As
 				|| beanId.equals("sendPartnerSignatureRemainderEmailNotification-")
 				|| beanId.equals("savePlaybookWorkFlows-") || beanId.equals("savePlaybookWorkflowEmailHistory-")
 				|| beanId.equals("downloadListOfContacts-") || beanId.equals("updateActivityAttachmentOpenAIFileId-")
-				|| beanId.equals("updateGlobalChatSearchColumn-")) {
+				|| beanId.equals("updateGlobalChatSearchColumn-") || beanId.equals("saveAndPushLeadToxAmplify")) {
 			scheduler.setPoolSize(Integer.valueOf(environment.getProperty("three.pool.size")));
 		} else if (beanId.equals("campaignEmailsForScheduler-") || beanId.equals("createUsersInUserList-")
 				|| beanId.equals("addPartnersToList-") || "updateContactList-".equals(beanId)
@@ -1117,6 +1117,11 @@ public class ApplicationRootConfig extends WebMvcConfigurerAdapter implements As
 	@Bean(name = "updateGlobalChatSearchColumn")
 	public Executor updateGlobalChatSearchColumn() {
 		return getThreadPoolTaskExecutorInstance("updateGlobalChatSearchColumn-");
+	}
+	
+	@Bean(name = "saveAndPushLeadToxAmplify")
+	public Executor saveAndPushLeadToxAmplify() {
+		return getThreadPoolTaskExecutorInstance("saveAndPushLeadToxAmplify-");
 	}
 
 }

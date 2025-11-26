@@ -7,10 +7,13 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -24,9 +27,19 @@ import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Lazy;
+import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.RestClientResponseException;
+import org.springframework.web.client.RestTemplate;
 
 import com.xtremand.activity.dto.ContactOpportunityRequestDTO;
 import com.xtremand.analytics.dao.TeamMemberAnalyticsDAO;
@@ -46,7 +59,12 @@ import com.xtremand.form.bom.FormDefaultFieldTypeEnum;
 import com.xtremand.form.bom.FormLabel;
 import com.xtremand.form.bom.FormTypeEnum;
 import com.xtremand.form.dao.FormDao;
+import com.xtremand.form.dto.FormChoiceDTO;
+import com.xtremand.form.dto.FormDTO;
+import com.xtremand.form.dto.FormLabelDTO;
+import com.xtremand.form.dto.FormLabelDTORow;
 import com.xtremand.form.emailtemplate.dto.SendTestEmailDTO;
+import com.xtremand.form.service.FormService;
 import com.xtremand.form.submit.bom.FormSubmit;
 import com.xtremand.formbeans.UserDTO;
 import com.xtremand.formbeans.XtremandResponse;
@@ -62,6 +80,7 @@ import com.xtremand.lead.bom.LeadField;
 import com.xtremand.lead.bom.LeadStage;
 import com.xtremand.lead.bom.Pipeline;
 import com.xtremand.lead.bom.PipelineStage;
+import com.xtremand.lead.bom.PipelineType;
 import com.xtremand.lead.dao.LeadDAO;
 import com.xtremand.lead.dto.LeadCountsResponseDTO;
 import com.xtremand.lead.dto.LeadCustomFieldDto;
@@ -105,6 +124,8 @@ import com.xtremand.vendor.bom.VendorDTO;
 @Service("LeadService")
 @Transactional
 public class LeadServiceImpl implements LeadService {
+	private static final String LABEL_NAME = "labelName";
+
 	private static final String ACCOUNT_SUB_TYPE = "account_sub_type";
 
 	private static final String PARTNER_TYPE = "partner_type";
@@ -131,6 +152,9 @@ public class LeadServiceImpl implements LeadService {
 
 	@Value("${server_path}")
 	String serverPath;
+	
+	@Value("${xAmplify.base.url}")
+	private String baseUrl;
 
 	@Value("${spring.profiles.active}")
 	private String profiles;
@@ -198,6 +222,12 @@ public class LeadServiceImpl implements LeadService {
 
 	@Value("${email}")
 	String fromEmail;
+	
+	@Autowired
+	private FormService formService;
+	
+	@Value("${xAmplify.pat}")
+	String xAmplifyPat;
 
 	@Override
 	public XtremandResponse saveLead(LeadDto leadDto) {
@@ -358,7 +388,7 @@ public class LeadServiceImpl implements LeadService {
 		Form form = null;
 		if (companyId != null) {
 			Integer formId = null;
-			formId = formDao.getSfCustomFormIdByCompanyIdAndFormType(companyId, FormTypeEnum.XAMPLIFY_LEAD_CUSTOM_FORM);
+			formId = formDao.getSfCustomFormIdByCompanyIdAndFormType(companyId, FormTypeEnum.CRM_LEAD_CUSTOM_FORM);
 			if (formId != null && formId > 0) {
 				form = formDao.getById(formId);
 			}
@@ -2466,6 +2496,561 @@ public class LeadServiceImpl implements LeadService {
 	@Override
 	public ModuleAccess findCompanyAccess(Integer companyId, String companyProfileName) {
 		return leadDAO.getCompanyAccess(companyId);
+	}
+	
+	private Map<String, Object> fetchMcpLeadCustomForm(String accessToken) throws XamplifyDataAccessException {
+		if (!XamplifyUtils.isValidString(accessToken)) {
+			throw new IllegalArgumentException("accessToken is required");
+		}
+
+		String url = buildMcpCustomFormUrl();
+		if (url.trim().isEmpty()) {
+			throw new IllegalStateException("MCP custom form URL is empty");
+		}
+
+		HttpHeaders headers = new HttpHeaders();
+		headers.set(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken.trim());
+		headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
+
+		HttpEntity<Void> entity = new HttpEntity<>(headers);
+		RestTemplate restTemplate = new RestTemplate();
+
+		try {
+			ResponseEntity<Map<String, Object>> response = restTemplate.exchange(url, HttpMethod.GET, entity,
+					new ParameterizedTypeReference<Map<String, Object>>() {
+					});
+
+			if (response.getStatusCode().is2xxSuccessful()) {
+				return response.getBody();
+			} else if (response.getStatusCode() == HttpStatus.UNAUTHORIZED) {
+				throw new XamplifyDataAccessException("Received 401 Unauthorized from MCP for URL: " + url);
+			} else {
+				throw new XamplifyDataAccessException("Unexpected response from MCP: " + response.getStatusCode() + " for URL: " + url);
+			}
+		} catch (HttpClientErrorException ex) {
+			String body = ex.getResponseBodyAsString();
+			throw new XamplifyDataAccessException("401 Unauthorized calling MCP. Response body: " + body, ex);
+		} catch (RestClientResponseException ex) {
+			String body = ex.getResponseBodyAsString();
+			throw new XamplifyDataAccessException("Error calling MCP: HTTP " + ex.getRawStatusCode() + ", body: " + body, ex);
+		} catch (Exception ex) {
+			throw new XamplifyDataAccessException("Error calling MCP", ex);
+		}
+	}
+
+
+	private IntegrationType resolveIntegrationType(Object integrationType) {
+		if (integrationType instanceof String) {
+			try {
+				return IntegrationType.valueOf(((String) integrationType).trim().toUpperCase(Locale.ROOT));
+			} catch (IllegalArgumentException ex) {
+				ex.printStackTrace();
+			}
+		}
+		return IntegrationType.XAMPLIFY;
+	}
+	
+	private FormTypeEnum resolveLeadFormType() {
+		return FormTypeEnum.CRM_LEAD_CUSTOM_FORM;
+	}
+	
+	private FormDTO buildLeadCustomFormDto(Integer companyId, FormTypeEnum formType, Object fields) {
+		CompanyProfile companyProfile = genericDAO.get(CompanyProfile.class, companyId);
+		if (companyProfile == null) {
+			return null;
+		}
+
+		FormDTO formDto = new FormDTO();
+		String formNamePrefix = companyProfile.getCompanyName();
+		if (!XamplifyUtils.isValidString(formNamePrefix)) {
+			formNamePrefix = "Lead";
+		}
+		formDto.setName(formNamePrefix + " Lead Custom Form");
+		formDto.setDescription(formDto.getName());
+		formDto.setCompanyName(companyProfile.getCompanyName());
+		formDto.setCompanyProfileName(companyProfile.getCompanyProfileName());
+		formDto.setFormType(formType);
+		Integer adminId = utilDao.findAdminIdByCompanyId(companyId);
+		formDto.setCreatedBy(adminId);
+		formDto.setUpdatedBy(adminId);
+
+		List<FormLabelDTO> formLabelDTOs = buildLeadCustomFormLabels(fields);
+		if (formLabelDTOs.isEmpty()) {
+			return null;
+		}
+		formDto.setFormLabelDTOs(formLabelDTOs);
+//		FormLabelDTORow formLabelDTORow = new FormLabelDTORow();
+//		formLabelDTORow.setFormLabelDTOs(formLabelDTOs);
+//		formDto.setFormLabelDTORows(Collections.singletonList(formLabelDTORow));
+		formDto.setFormLabelDTORows(utilService.constructFormRows(formLabelDTOs));
+		return formDto;
+	}
+	
+	@Override
+	public XtremandResponse saveLeadCustomFormFromMcp(Integer companyId) {
+		XtremandResponse response = new XtremandResponse();
+		if (!XamplifyUtils.isValidInteger(companyId)) {
+			return response;
+		}
+		Map<String, Object> formResponse;
+		try {
+			formResponse = fetchMcpLeadCustomForm(xAmplifyPat);
+			if (formResponse == null || formResponse.isEmpty()) {
+				return response;
+			}
+			IntegrationType integrationType = resolveIntegrationType(formResponse.get("integrationType"));
+			FormTypeEnum formType = resolveLeadFormType();
+			if (formType == null) {
+				return response;
+			}
+
+			FormDTO formDto = buildLeadCustomFormDto(companyId, formType, formResponse.get("fields"));
+			if (formDto == null) {
+				return response;
+			}
+
+			Integer formId = formDao.getSfCustomFormIdByCompanyIdAndFormType(companyId, formType);
+			if (XamplifyUtils.isValidInteger(formId)) {
+				Form existingForm = formDao.getById(formId);
+				Map<String, FormLabel> existingLabelsById = existingForm != null
+						? existingForm.getFormLabels().stream().filter(Objects::nonNull)
+								.filter(label -> label.getLabelId() != null && !label.getLabelId().isEmpty()).collect(Collectors
+										.toMap(label -> label.getLabelId().trim(), Function.identity(), (a, b) -> a))
+						: Collections.emptyMap();
+				Set<String> incomingLabelIds = new HashSet<>();
+				if (formDto.getFormLabelDTOs() != null) {
+					for (FormLabelDTO labelDTO : formDto.getFormLabelDTOs()) {
+						if (labelDTO == null || labelDTO.getLabelId() == null || labelDTO.getLabelId().isEmpty()) {
+							continue;
+						}
+						String labelId = labelDTO.getLabelId().trim();
+						incomingLabelIds.add(labelId);
+						FormLabel existingLabel = existingLabelsById.get(labelId);
+						if (existingLabel != null) {
+							labelDTO.setId(existingLabel.getId());
+						}
+					}
+				}
+
+				for (FormLabel existingLabel : existingLabelsById.values()) {
+					if (existingLabel != null && existingLabel.getLabelId() != null && !existingLabel.getLabelId().isEmpty()
+							&& !incomingLabelIds.contains(existingLabel.getLabelId().trim())) {
+						sfCustomFormDataDAO.deleteCustomFormLabelByFieldId(existingLabel.getId());
+						formDao.deleteSfCustomLabelById(existingLabel.getId());
+					}
+				}
+				formDto.setId(formId);
+				formService.update(formDto, null);
+			} else {
+				formService.save(formDto, null);
+			}
+			response.setStatusCode(200);
+			response.setMessage("Custom form sync completed successfully.");
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return response;
+	}
+	
+	private String toString(Object value) {
+		return value != null ? String.valueOf(value) : null;
+	}
+	
+	private List<FormLabelDTO> buildLeadCustomFormLabels(Object fieldsObject) {
+		if (!(fieldsObject instanceof List<?>)) {
+			return Collections.emptyList();
+		}
+		List<FormLabelDTO> labels = new ArrayList<>();
+		int order = 1;
+		for (Object fieldObject : (List<?>) fieldsObject) {
+			if (!(fieldObject instanceof Map<?, ?>)) {
+				continue;
+			}
+			Map<?, ?> fieldMap = (Map<?, ?>) fieldObject;
+			String labelId = toString(fieldMap.get("labelId"));
+			if (!XamplifyUtils.isValidString(labelId)) {
+				labelId = toString(fieldMap.get(LABEL_NAME));
+			}
+			if (!XamplifyUtils.isValidString(labelId)) {
+				continue;
+			}
+
+			FormLabelDTO dto = new FormLabelDTO();
+			dto.setLabelId(labelId);
+			dto.setHiddenLabelId(toString(fieldMap.get("hiddenFieldName")));
+			dto.setLabelName(toString(fieldMap.get(LABEL_NAME)));
+			dto.setDisplayName(toString(fieldMap.get(LABEL_NAME)));
+			dto.setLabelType(toString(fieldMap.get("labelType")));
+			dto.setRequired(Boolean.TRUE.equals(fieldMap.get("required")));
+			dto.setPlaceHolder(toString(fieldMap.get("placeholder")));
+			dto.setDescription(toString(fieldMap.get("description")));
+			dto.setOrder((Integer) fieldMap.get("order"));
+			dto.setColumnOrder(order++);
+			dto.setFormDefaultFieldType(null);
+			dto.setActive(true);
+
+			List<FormChoiceDTO> choiceDTOs = buildChoiceDtos(fieldMap.get("options"),
+					fieldMap.get("defaultChoiceValue"));
+			applyChoicesByType(dto, choiceDTOs);
+			labels.add(dto);
+		}
+		return labels;
+	}
+	
+	private void applyChoicesByType(FormLabelDTO dto, List<FormChoiceDTO> choiceDTOs) {
+		if (choiceDTOs.isEmpty()) {
+			return;
+		}
+		String labelType = dto.getLabelType() != null && !dto.getLabelType().isEmpty() ? dto.getLabelType().toLowerCase(Locale.ROOT)
+				: "";
+		switch (labelType) {
+		case "checkbox":
+			dto.setCheckBoxChoices(choiceDTOs);
+			break;
+		case "radio":
+			dto.setRadioButtonChoices(choiceDTOs);
+			break;
+		default:
+			dto.setDropDownChoices(choiceDTOs);
+			break;
+		}
+	}
+	
+	private List<FormChoiceDTO> buildChoiceDtos(Object optionsObject, Object defaultChoiceObject) {
+		if (!(optionsObject instanceof List<?>)) {
+			return Collections.emptyList();
+		}
+		String defaultChoiceValue = toString(defaultChoiceObject);
+		List<FormChoiceDTO> choices = new ArrayList<>();
+		for (Object optionObject : (List<?>) optionsObject) {
+			if (!(optionObject instanceof Map<?, ?>)) {
+				continue;
+			}
+			Map<?, ?> optionMap = (Map<?, ?>) optionObject;
+			FormChoiceDTO choiceDTO = new FormChoiceDTO();
+			choiceDTO.setLabelId(toString(optionMap.get("value")));
+			choiceDTO.setHiddenLabelId(toString(optionMap.get("hiddenValue")));
+			choiceDTO.setName(toString(optionMap.get("label")));
+			boolean isDefault = Boolean.TRUE.equals(optionMap.get("default"))
+					|| (defaultChoiceValue != null && !defaultChoiceValue.isEmpty()
+							&& defaultChoiceValue.equals(choiceDTO.getLabelId()));
+			choiceDTO.setDefaultColumn(isDefault);
+			choices.add(choiceDTO);
+		}
+		return choices;
+	}
+	
+	private String buildMcpCustomFormUrl() {
+		if (!baseUrl.endsWith("/")) {
+			baseUrl = baseUrl + "/";
+		}
+		return baseUrl + "mcp/leads/custom-form";
+	}
+	
+	private Map<String, Object> createPrmLead(String patToken, LeadDto leadDto) throws XamplifyDataAccessException {
+
+	    if (!XamplifyUtils.isValidString(patToken)) {
+	        throw new IllegalArgumentException("patToken is required");
+	    }
+	    if (leadDto == null) {
+	        throw new IllegalArgumentException("leadDto is required");
+	    }
+
+		if (!baseUrl.endsWith("/")) {
+			baseUrl = baseUrl + "/";
+		}
+	    String url = baseUrl + "mcp/leads";
+
+	    HttpHeaders headers = new HttpHeaders();
+	    headers.set(HttpHeaders.AUTHORIZATION, "Bearer " + patToken.trim());
+	    headers.setContentType(MediaType.APPLICATION_JSON);
+	    headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
+
+	    HttpEntity<LeadDto> requestEntity = new HttpEntity<>(leadDto, headers);
+	    RestTemplate restTemplate = new RestTemplate();
+
+	    try {
+	        ResponseEntity<Map<String, Object>> response = restTemplate.exchange(
+	                url,
+	                HttpMethod.POST,
+	                requestEntity,
+	                new ParameterizedTypeReference<Map<String, Object>>() {}
+	        );
+
+	        HttpStatus status = response.getStatusCode();
+
+	        if (status.is2xxSuccessful()) {
+	            return response.getBody();
+	        } else if (status == HttpStatus.UNAUTHORIZED) {
+	            throw new XamplifyDataAccessException("Received 401 Unauthorized calling createPRMLead at URL: " + url);
+	        } else if (status == HttpStatus.FORBIDDEN) {
+	            throw new XamplifyDataAccessException("Received 403 Forbidden calling createPRMLead at URL: " + url);
+	        } else {
+	            throw new XamplifyDataAccessException("Unexpected status " + status.value()
+	                    + " calling createPRMLead at URL: " + url);
+	        }
+
+	    } catch (HttpClientErrorException ex) {
+	        String body = ex.getResponseBodyAsString();
+	        throw new XamplifyDataAccessException("Client error calling createPRMLead. HTTP "
+	                + ex.getStatusCode().value() + ", body: " + body, ex);
+
+	    } catch (RestClientResponseException ex) {
+	        String body = ex.getResponseBodyAsString();
+	        throw new XamplifyDataAccessException("Error calling createPRMLead. HTTP "
+	                + ex.getRawStatusCode() + ", body: " + body, ex);
+
+	    } catch (Exception ex) {
+	        throw new XamplifyDataAccessException("Unexpected error calling createPRMLead", ex);
+	    }
+	}
+
+	@Override
+	public void saveAndPushLeadToxAmplify(LeadDto leadDto) {
+		if (leadDto != null && leadDto.getId() != null && leadDto.getId() > 0) {
+			try {
+				UserDTO userDTO = userDao.getSendorCompanyDetailsByUserId(leadDto.getUserId());
+				leadDto.setCreatedByCompanyName(userDTO.getCompanyName());
+				leadDto.setPartnerCompanyId(userDTO.getCompanyId());
+				leadDto.setCreatedByEmail(userDTO.getEmailId());
+				leadDto.setCreatedByName(userDTO.getFullName());
+				leadDto.setLeadId(leadDto.getId());
+				leadDto.setExternalPipelineId(leadDto.getCreatedForPipelineId() + "");
+				leadDto.setExternalPipelineStageId(leadDto.getCreatedForPipelineStageId() + "");
+				leadDto.setPipelineName(leadDto.getCreatedForPipeline());
+				leadDto.setPipelineStageName(leadDto.getCreatedForPipelineStage());
+				createPrmLead(xAmplifyPat, leadDto);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
+		
+	}
+	
+//	@SuppressWarnings({ "rawtypes", "unchecked" })
+//	private Map<String, Object> fetchMcpLeadPipelines() {
+//		String url = buildMcpLeadPipelinesUrl();
+//		if (url.isEmpty()) {
+//			return Collections.emptyMap();
+//		}
+//		HttpHeaders headers = new HttpHeaders();
+//		headers.set(HttpHeaders.AUTHORIZATION, "Bearer " + xAmplifyPat.trim());
+//		RestTemplate restTemplate = new RestTemplate();
+//		try {
+//			ResponseEntity<Map> response = restTemplate.exchange(url, HttpMethod.GET, new HttpEntity<>(headers),
+//					Map.class);
+//			if (response != null && response.getStatusCode() == HttpStatus.OK) {
+//				return response.getBody();
+//			}
+//		} catch (Exception ex) {
+//			ex.printStackTrace();
+//		}
+//		return Collections.emptyMap();
+//	}
+	
+	private Map<String, Object> fetchMcpLeadPipelines() throws XamplifyDataAccessException {
+
+		String url = buildMcpLeadPipelinesUrl();
+		if (url.trim().isEmpty()) {
+			throw new IllegalStateException("MCP custom form URL is empty");
+		}
+
+		HttpHeaders headers = new HttpHeaders();
+		headers.set(HttpHeaders.AUTHORIZATION, "Bearer " + xAmplifyPat.trim());
+		headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
+
+		HttpEntity<Void> entity = new HttpEntity<>(headers);
+		RestTemplate restTemplate = new RestTemplate();
+
+		try {
+			ResponseEntity<Map<String, Object>> response = restTemplate.exchange(url, HttpMethod.GET, entity,
+					new ParameterizedTypeReference<Map<String, Object>>() {
+					});
+
+			if (response.getStatusCode().is2xxSuccessful()) {
+				return response.getBody();
+			} else if (response.getStatusCode() == HttpStatus.UNAUTHORIZED) {
+				throw new XamplifyDataAccessException("Received 401 Unauthorized from MCP for URL: " + url);
+			} else {
+				throw new XamplifyDataAccessException("Unexpected response from MCP: " + response.getStatusCode() + " for URL: " + url);
+			}
+		} catch (HttpClientErrorException ex) {
+			String body = ex.getResponseBodyAsString();
+			throw new XamplifyDataAccessException("401 Unauthorized calling MCP. Response body: " + body, ex);
+		} catch (RestClientResponseException ex) {
+			String body = ex.getResponseBodyAsString();
+			throw new XamplifyDataAccessException("Error calling MCP: HTTP " + ex.getRawStatusCode() + ", body: " + body, ex);
+		} catch (Exception ex) {
+			throw new XamplifyDataAccessException("Error calling MCP", ex);
+		}
+	}
+	
+	@Override
+	public XtremandResponse saveLeadPipelinesFromMcp(Integer companyId) {
+		XtremandResponse response = new XtremandResponse();
+		if (!XamplifyUtils.isValidInteger(companyId) || !XamplifyUtils.isValidString(xAmplifyPat)) {
+			return response;
+		}
+
+		Map<String, Object> pipelineResponse = fetchMcpLeadPipelines();
+		if (pipelineResponse == null || pipelineResponse.isEmpty()) {
+			response.setStatusCode(404);
+			response.setMessage("Pipeline(s) not found.");
+			return response;
+		}
+
+		Object pipelinesObject = pipelineResponse.get("pipelines");
+		if (!(pipelinesObject instanceof List<?>)) {
+			response.setStatusCode(404);
+			response.setMessage("Pipeline(s) not found.");
+			return response;
+		}
+
+		CompanyProfile companyProfile = genericDAO.get(CompanyProfile.class, companyId);
+		if (companyProfile == null) {
+			response.setStatusCode(404);
+			response.setMessage("Company not found.");
+			return response;
+		}
+
+		IntegrationType integrationType = resolveIntegrationType(pipelineResponse.get("integrationType"));
+		Integer adminId = utilDao.findAdminIdByCompanyId(companyId);
+		for (Object pipelineObject : (List<?>) pipelinesObject) {
+			upsertLeadPipeline(companyProfile, adminId, integrationType, pipelineObject);
+		}
+		response.setStatusCode(200);
+		response.setMessage("Pipeline(s) sync completed successfully.");
+		return response;
+	}
+	
+	private String buildMcpLeadPipelinesUrl() {
+		if (!baseUrl.endsWith("/")) {
+			baseUrl = baseUrl + "/";
+		}
+		return baseUrl + "mcp/leads/pipelines";
+	}
+	
+	private void upsertLeadPipeline(CompanyProfile companyProfile, Integer adminId, IntegrationType integrationType,
+			Object pipelineObject) {
+		if (!(pipelineObject instanceof Map<?, ?>)) {
+			return;
+		}
+		Map<?, ?> pipelineMap = (Map<?, ?>) pipelineObject;
+		String externalPipelineId = toString(pipelineMap.get("pipelineId"));
+		Pipeline pipeline = null;
+		if (XamplifyUtils.isValidString(externalPipelineId)) {
+			pipeline = pipelineDAO.getLeadPipelineByExternalPipelineId(companyProfile.getId(), externalPipelineId,
+					integrationType);
+		}
+
+		boolean isNew = pipeline == null;
+		if (isNew) {
+			pipeline = new Pipeline();
+			pipeline.setCompany(companyProfile);
+			pipeline.setType(PipelineType.LEAD);
+			pipeline.setCreatedBy(adminId);
+			pipeline.setPrivate(false);
+		}
+
+		boolean pipelineChanged = false;
+		String pipelineName = toString(pipelineMap.get("pipelineName"));
+		if (pipelineName != null && !pipelineName.isEmpty() && !pipelineName.equals(pipeline.getName())) {
+			pipeline.setName(pipelineName);
+			pipelineChanged = true;
+		}
+
+		Boolean defaultPipeline = Boolean.TRUE.equals(pipelineMap.get("defaultPipeline"));
+		if (pipeline.isDefault() != Boolean.TRUE.equals(defaultPipeline)) {
+			pipeline.setDefault(defaultPipeline);
+			pipelineChanged = true;
+		}
+
+		if (integrationType != null && !integrationType.equals(pipeline.getIntegrationType())) {
+			pipeline.setIntegrationType(integrationType);
+			pipelineChanged = true;
+		}
+
+		if (externalPipelineId != null && !externalPipelineId.equals(pipeline.getExternalPipelineId())) {
+			pipeline.setExternalPipelineId(externalPipelineId);
+			pipelineChanged = true;
+		}
+
+		if (isNew || pipelineChanged) {
+			pipeline.initialiseCommonFields(isNew, adminId);
+			if (isNew) {
+				genericDAO.save(pipeline);
+			} else {
+				genericDAO.merge(pipeline);
+			}
+		}
+
+		upsertLeadPipelineStages(pipeline, pipelineMap.get("stages"), adminId);
+	}
+	
+	private void upsertLeadPipelineStages(Pipeline pipeline, Object stagesObject, Integer adminId) {
+		if (!(stagesObject instanceof List<?>)) {
+			return;
+		}
+		int displayIndex = 1;
+		for (Object stageObject : (List<?>) stagesObject) {
+			if (!(stageObject instanceof Map<?, ?>)) {
+				continue;
+			}
+			Map<?, ?> stageMap = (Map<?, ?>) stageObject;
+			String externalStageId = toString(stageMap.get("pipelineStageId"));
+			if (externalStageId == null || externalStageId.isEmpty()) {
+				continue;
+			}
+
+			PipelineStage stage = pipelineDAO.getPipelineStageByExternalPipelineStageId(pipeline.getCompany().getId(),
+					pipeline.getId(), externalStageId);
+			boolean isNew = stage == null;
+			if (isNew) {
+				stage = new PipelineStage();
+				stage.setPipeline(pipeline);
+				stage.setCreatedBy(adminId);
+			}
+
+			boolean stageChanged = false;
+			String stageName = toString(stageMap.get("stageName"));
+			if (stageName != null && !stageName.isEmpty() && !stageName.equals(stage.getStageName())) {
+				stage.setStageName(stageName);
+				stageChanged = true;
+			}
+			if (!externalStageId.equals(stage.getExternalPipelineStageId())) {
+				stage.setExternalPipelineStageId(externalStageId);
+				stageChanged = true;
+			}
+
+			Boolean defaultStage = Boolean.TRUE.equals(stageMap.get("defaultStage"));
+			if (stage.isDefaultStage() != Boolean.TRUE.equals(defaultStage)) {
+				stage.setDefaultStage(defaultStage);
+				stageChanged = true;
+			}
+
+			int desiredDisplayIndex = displayIndex++;
+			if (!Objects.equals(stage.getDisplayIndex(), desiredDisplayIndex)) {
+				stage.setDisplayIndex(desiredDisplayIndex);
+				stageChanged = true;
+			}
+			if (stage.isWon()) {
+				stage.setWon(false);
+				stageChanged = true;
+			}
+			if (stage.isLost()) {
+				stage.setLost(false);
+				stageChanged = true;
+			}
+
+			if (isNew || stageChanged) {
+				stage.initialiseCommonFields(isNew, adminId);
+				if (isNew) {
+					genericDAO.save(stage);
+				} else {
+					genericDAO.merge(stage);
+				}
+			}
+		}
 	}
 
 }

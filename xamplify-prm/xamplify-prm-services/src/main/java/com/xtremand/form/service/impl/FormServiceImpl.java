@@ -612,6 +612,7 @@ public class FormServiceImpl implements FormService {
 		Integer userId = formDto.getCreatedBy();
 		String companyProfileName = formDto.getCompanyProfileName();
 		List<String> formNames = formDao.listFormNamesByCompanyId(userId, companyProfileName);
+		formNames = formNames != null && !formNames.isEmpty() ? formNames : Collections.emptyList();
 		if (formDto.getId() != null && !formDto.isSaveAs()) {
 			String existingFormName = formDao.getById(formDto.getId()).getFormName().trim();
 			if (formNames.indexOf(formDto.getName().toLowerCase()) > -1

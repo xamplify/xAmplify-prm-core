@@ -1823,13 +1823,13 @@ public class XamplifyUtils {
 		FormTypeEnum formTypeEnum = null;
 		switch (objectType) {
 		case LEAD:
-			formTypeEnum = FormTypeEnum.XAMPLIFY_LEAD_CUSTOM_FORM;
+			formTypeEnum = FormTypeEnum.CRM_LEAD_CUSTOM_FORM;
 			break;
 		case DEAL:
 			formTypeEnum = FormTypeEnum.XAMPLIFY_DEAL_CUSTOM_FORM;
 			break;
 		default:
-			formTypeEnum = FormTypeEnum.XAMPLIFY_LEAD_CUSTOM_FORM;
+			formTypeEnum = FormTypeEnum.CRM_LEAD_CUSTOM_FORM;
 		}
 		return formTypeEnum;
 	}

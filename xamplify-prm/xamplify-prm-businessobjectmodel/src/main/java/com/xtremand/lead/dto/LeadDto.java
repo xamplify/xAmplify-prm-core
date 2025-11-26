@@ -122,4 +122,10 @@ public class LeadDto {
 	private String customFields;
 	private String accountSubType;
 	private String partnerType;
+	private Integer leadId;
+	private String externalPipelineId;
+    private String externalPipelineStageId;
+    private String pipelineName;
+    private String pipelineStageName;
+    private Integer partnerCompanyId;
 }

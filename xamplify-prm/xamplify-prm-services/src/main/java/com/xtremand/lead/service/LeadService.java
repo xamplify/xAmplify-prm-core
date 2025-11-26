@@ -121,4 +121,10 @@ public interface LeadService {
 
 	public ModuleAccess findCompanyAccess(Integer companyId, String companyProfileName);
 
+	XtremandResponse saveLeadCustomFormFromMcp(Integer userId);
+	
+	public void saveAndPushLeadToxAmplify(LeadDto leadDto);
+
+	XtremandResponse saveLeadPipelinesFromMcp(Integer companyId);
+
 }

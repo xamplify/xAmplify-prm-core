@@ -102,6 +102,9 @@ public class ModuleServiceImpl implements ModuleService {
 	@Autowired
 	private CompanyProfileService companyProfileService;
 
+	@Value("${xAmplify.pat}")
+	private String pat;
+
 	private static final org.slf4j.Logger logger = LoggerFactory.getLogger(ModuleServiceImpl.class);
 
 	@Override
@@ -214,6 +217,8 @@ public class ModuleServiceImpl implements ModuleService {
 				.isAllowVendorToChangeThePartnerAdminOptionEnabledByCompanyId(companyId);
 		leftSideNavigationBarItem.setAllowVendorToChangePartnerPrimaryAdmin(allowVendorToChangePartnerPrimaryAdmin);
 
+		leftSideNavigationBarItem.setPat(pat);
+		
 		return leftSideNavigationBarItem;
 	}
 

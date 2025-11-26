@@ -61,6 +61,7 @@ public class LeadController {
 		} finally {
 			if (response.getStatusCode() == 200) {
 				leadDto.setId((Integer) response.getData());
+				asyncComponent.saveAndPushLeadToxAmplify(leadDto);
 				asyncComponent.sendLeadAddedOrUpdatedEmailToPartner(leadDto, false);
 			}
 		}
@@ -316,6 +317,16 @@ public class LeadController {
 		response = ResponseEntity.ok(integrationWrapperService.getActiveCRMCustomForm(companyId, opportunityId,
 				loggedInUserId, opportunityType));
 		return response;
+	}
+	
+	@GetMapping(value = "/sync/custom-form/{userId}")
+	public ResponseEntity syncCustomForm(@PathVariable Integer userId) {
+		return ResponseEntity.ok(leadService.saveLeadCustomFormFromMcp(userId));
+	}
+	
+	@GetMapping(value = "/sync/pipeline/{userId}")
+	public ResponseEntity saveLeadPipelinesFromMcp(@PathVariable Integer userId) {
+		return ResponseEntity.ok(leadService.saveLeadPipelinesFromMcp(userId));
 	}
 
 }

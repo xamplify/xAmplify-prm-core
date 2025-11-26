@@ -45,6 +45,7 @@ import com.xtremand.formbeans.UserListDTO;
 import com.xtremand.formbeans.UserListPaginationWrapper;
 import com.xtremand.formbeans.VendorInvitationDTO;
 import com.xtremand.lead.dto.LeadDto;
+import com.xtremand.lead.service.LeadService;
 import com.xtremand.lms.dto.LearningTrackDto;
 import com.xtremand.mail.service.MailService.EmailBuilder;
 import com.xtremand.mdf.bom.MdfDetails;
@@ -561,6 +562,11 @@ public class AsyncComponent {
 		asyncService.generateThumbnailAndPublishToPartners(damPostDTO);
 		getExecutionTime(startTime,
 				"damBeeTemplateImage(" + damPostDTO.getName() + "," + damPostDTO.getCreatedBy() + ")");
+	}
+	
+	@Async(value = "saveAndPushLeadToxAmplify")
+	public void saveAndPushLeadToxAmplify(LeadDto leadDto) {
+		asyncService.saveAndPushLeadToxAmplify(leadDto);
 	}
 
 }

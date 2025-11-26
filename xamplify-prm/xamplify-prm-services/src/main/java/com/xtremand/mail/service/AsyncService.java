@@ -112,6 +112,7 @@ import com.xtremand.highlevel.analytics.bom.DownloadStatus;
 import com.xtremand.highlevel.analytics.dto.DownloadRequestUserDetailsDTO;
 import com.xtremand.lead.dao.LeadDAO;
 import com.xtremand.lead.dto.LeadDto;
+import com.xtremand.lead.service.LeadService;
 import com.xtremand.lms.bom.LearningTrack;
 import com.xtremand.lms.bom.LearningTrackContent;
 import com.xtremand.lms.bom.LearningTrackType;
@@ -590,6 +591,9 @@ public class AsyncService {
 
 	@Autowired
 	private WorkflowService workflowService;
+	
+	@Autowired
+	private LeadService leadService;
 
 	public void sendPartnerMail(User user, int templateId, User customer, Integer userListId) {
 		EmailTemplate template = genericDAO.get(EmailTemplate.class, templateId);
@@ -4883,6 +4887,10 @@ public class AsyncService {
 
 	public void saveCompanyDomainColors(CompanyProfile companyProfile) {
 		utilService.saveDomainColors(companyProfile); /*** XNFR-1013 ***/
+	}
+	
+	public void saveAndPushLeadToxAmplify(LeadDto leadDto) {
+		leadService.saveAndPushLeadToxAmplify(leadDto);
 	}
 
 }

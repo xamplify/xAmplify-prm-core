@@ -75,4 +75,7 @@ public interface PipelineDAO {
 	
 	public List<PipelineResponseDTO> findPipelineForCRMSettings(PipelineRequestDTO pipelineRequestDTO, Integer companyId);
 
+	public Pipeline getLeadPipelineByExternalPipelineId(Integer id, String externalPipelineId,
+			IntegrationType integrationType);
+
 }

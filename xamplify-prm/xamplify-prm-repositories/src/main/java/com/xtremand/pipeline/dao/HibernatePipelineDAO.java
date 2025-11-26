@@ -392,5 +392,17 @@ public class HibernatePipelineDAO implements PipelineDAO {
 		return (List<PipelineResponseDTO>) hibernateSQLQueryResultUtilDao
 				.returnDTOList(hibernateSQLQueryResultRequestDTO);
 	}
+	
+	@Override
+	public Pipeline getLeadPipelineByExternalPipelineId(Integer companyId, String externalPipelineId,
+			IntegrationType integrationType) {
+		Session session = sessionFactory.getCurrentSession();
+		org.hibernate.Criteria criteria = session.createCriteria(Pipeline.class);
+		criteria.add(Restrictions.eq("externalPipelineId", externalPipelineId));
+		criteria.add(Restrictions.eq("company.id", companyId));
+		criteria.add(Restrictions.eq("type", PipelineType.LEAD));
+		criteria.add(Restrictions.eq("integrationType", integrationType));
+		return (Pipeline) criteria.uniqueResult();
+	}
 
 }
