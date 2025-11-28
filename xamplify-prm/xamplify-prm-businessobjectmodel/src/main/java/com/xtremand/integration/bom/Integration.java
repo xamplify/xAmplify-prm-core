@@ -197,7 +197,7 @@ public class Integration extends XamplifyTimeStamp {
 	private boolean firstIntegration;
 
 	public enum IntegrationType {
-		XAMPLIFY("xamplify");
+		XAMPLIFY("xamplify"), CUSTOM_CRM("custom_crm");
 
 		protected String type;
 

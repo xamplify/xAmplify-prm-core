@@ -45,7 +45,7 @@ public interface PipelineDAO {
 			IntegrationType integrationType);
 
 	public PipelineStage getPipelineStageByExternalPipelineStageId(Integer companyId, Integer pipelineId,
-			String externalPipelineStageId);
+			String externalPipelineStageId, String stageName);
 
 	public PipelineStage getDefaultStage(Integer pipelineId);
 
@@ -77,5 +77,9 @@ public interface PipelineDAO {
 
 	public Pipeline getLeadPipelineByExternalPipelineId(Integer id, String externalPipelineId,
 			IntegrationType integrationType);
+	
+	public void reassignLeadPipelines(List<Pipeline> pipelinesToRemove, Pipeline targetPipeline);
+
+    public PipelineStage findFallbackStage(Integer pipelineId);
 
 }

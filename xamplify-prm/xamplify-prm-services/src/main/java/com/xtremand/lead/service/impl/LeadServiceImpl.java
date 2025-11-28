@@ -2541,10 +2541,14 @@ public class LeadServiceImpl implements LeadService {
 
 	private IntegrationType resolveIntegrationType(Object integrationType) {
 		if (integrationType instanceof String) {
-			try {
-				return IntegrationType.valueOf(((String) integrationType).trim().toUpperCase(Locale.ROOT));
-			} catch (IllegalArgumentException ex) {
-				ex.printStackTrace();
+//			try {
+//				return IntegrationType.valueOf(((String) integrationType).trim().toUpperCase(Locale.ROOT));
+//			} catch (IllegalArgumentException ex) {
+//				ex.printStackTrace();
+//			}
+			
+			if (!((String) integrationType).isEmpty()) {
+				return IntegrationType.CUSTOM_CRM;
 			}
 		}
 		return IntegrationType.XAMPLIFY;
@@ -2587,8 +2591,12 @@ public class LeadServiceImpl implements LeadService {
 	}
 	
 	@Override
-	public XtremandResponse saveLeadCustomFormFromMcp(Integer companyId) {
+	public XtremandResponse saveLeadCustomFormFromMcp(Integer userId) {
 		XtremandResponse response = new XtremandResponse();
+		if (!XamplifyUtils.isValidInteger(userId)) {
+			return response;
+		}
+		Integer companyId = userDao.getCompanyIdByUserId(userId);
 		if (!XamplifyUtils.isValidInteger(companyId)) {
 			return response;
 		}
@@ -2886,9 +2894,13 @@ public class LeadServiceImpl implements LeadService {
 	}
 	
 	@Override
-	public XtremandResponse saveLeadPipelinesFromMcp(Integer companyId) {
+	public XtremandResponse saveLeadPipelinesFromMcp(Integer userId) {
 		XtremandResponse response = new XtremandResponse();
-		if (!XamplifyUtils.isValidInteger(companyId) || !XamplifyUtils.isValidString(xAmplifyPat)) {
+		if (!XamplifyUtils.isValidInteger(userId) || !XamplifyUtils.isValidString(xAmplifyPat)) {
+			return response;
+		}
+		Integer companyId = userDao.getCompanyIdByUserId(userId);
+		if (!XamplifyUtils.isValidInteger(companyId)) {
 			return response;
 		}
 
@@ -2914,13 +2926,76 @@ public class LeadServiceImpl implements LeadService {
 		}
 
 		IntegrationType integrationType = resolveIntegrationType(pipelineResponse.get("integrationType"));
-		Integer adminId = utilDao.findAdminIdByCompanyId(companyId);
-		for (Object pipelineObject : (List<?>) pipelinesObject) {
-			upsertLeadPipeline(companyProfile, adminId, integrationType, pipelineObject);
+		if (integrationType == null || IntegrationType.XAMPLIFY.equals(integrationType)) {
+			integrationType = IntegrationType.CUSTOM_CRM;
 		}
+
+		Integer adminId = utilDao.findAdminIdByCompanyId(companyId);
+		List<Pipeline> existingPipelines = pipelineDAO.getPipelinesByIntegrationType(companyProfile.getId(),
+				PipelineType.LEAD, integrationType, null);
+		Map<String, Pipeline> pipelinesByExternalId = existingPipelines.stream()
+				.filter(pipeline -> pipeline != null && XamplifyUtils.isValidString(pipeline.getExternalPipelineId()))
+				.collect(Collectors.toMap(pipeline -> pipeline.getExternalPipelineId().trim(), Function.identity(),
+						(a, b) -> a));
+		Map<String, Pipeline> pipelinesByName = existingPipelines.stream()
+				.filter(pipeline -> pipeline != null && XamplifyUtils.isValidString(pipeline.getName()))
+				.collect(Collectors.toMap(pipeline -> pipeline.getName().trim().toLowerCase(Locale.ROOT),
+						Function.identity(), (a, b) -> a));
+
+		Set<Integer> syncedPipelineIds = new HashSet<>();
+		List<Pipeline> syncedPipelines = new ArrayList<>();
+		for (Object pipelineObject : (List<?>) pipelinesObject) {
+			Pipeline pipeline = upsertLeadPipeline(companyProfile, adminId, integrationType, pipelineObject,
+					pipelinesByExternalId, pipelinesByName);
+			if (pipeline != null && pipeline.getId() != null) {
+				syncedPipelineIds.add(pipeline.getId());
+				syncedPipelines.add(pipeline);
+			}
+		}
+
+		Pipeline defaultPipeline = determineDefaultPipeline(syncedPipelines, adminId);
+		List<Pipeline> pipelinesToRemove = existingPipelines.stream().filter(pipeline -> pipeline != null
+				&& pipeline.getId() != null && !syncedPipelineIds.contains(pipeline.getId()))
+				.collect(Collectors.toList());
+
+		if (!pipelinesToRemove.isEmpty() && defaultPipeline != null) {
+			pipelineDAO.reassignLeadPipelines(pipelinesToRemove, defaultPipeline);
+			for (Pipeline pipeline : pipelinesToRemove) {
+				genericDAO.remove(pipeline);
+			}
+		}
+
 		response.setStatusCode(200);
 		response.setMessage("Pipeline(s) sync completed successfully.");
 		return response;
+	}
+	
+	private Pipeline determineDefaultPipeline(List<Pipeline> pipelines, Integer adminId) {
+		List<Pipeline> availablePipelines = pipelines.stream().filter(Objects::nonNull).collect(Collectors.toList());
+		if (availablePipelines.isEmpty()) {
+			return null;
+		}
+
+		Pipeline chosenDefault = null;
+		for (Pipeline pipeline : availablePipelines) {
+			if (pipeline.isDefault()) {
+				if (chosenDefault == null) {
+					chosenDefault = pipeline;
+				} else {
+					pipeline.setDefault(false);
+					pipeline.initialiseCommonFields(false, adminId);
+					genericDAO.update(pipeline);
+				}
+			}
+		}
+
+		if (chosenDefault == null) {
+			chosenDefault = availablePipelines.get(0);
+			chosenDefault.setDefault(true);
+			chosenDefault.initialiseCommonFields(false, adminId);
+			genericDAO.update(chosenDefault);
+		}
+		return chosenDefault;
 	}
 	
 	private String buildMcpLeadPipelinesUrl() {
@@ -2930,17 +3005,20 @@ public class LeadServiceImpl implements LeadService {
 		return baseUrl + "mcp/leads/pipelines";
 	}
 	
-	private void upsertLeadPipeline(CompanyProfile companyProfile, Integer adminId, IntegrationType integrationType,
-			Object pipelineObject) {
+	private Pipeline upsertLeadPipeline(CompanyProfile companyProfile, Integer adminId, IntegrationType integrationType,
+			Object pipelineObject, Map<String, Pipeline> pipelinesByExternalId, Map<String, Pipeline> pipelinesByName) {
 		if (!(pipelineObject instanceof Map<?, ?>)) {
-			return;
+			return null;
 		}
 		Map<?, ?> pipelineMap = (Map<?, ?>) pipelineObject;
 		String externalPipelineId = toString(pipelineMap.get("pipelineId"));
+		String pipelineName = toString(pipelineMap.get("pipelineName"));
 		Pipeline pipeline = null;
 		if (XamplifyUtils.isValidString(externalPipelineId)) {
-			pipeline = pipelineDAO.getLeadPipelineByExternalPipelineId(companyProfile.getId(), externalPipelineId,
-					integrationType);
+			pipeline = pipelinesByExternalId.get(externalPipelineId.trim());
+		}
+		if (pipeline == null && XamplifyUtils.isValidString(pipelineName)) {
+			pipeline = pipelinesByName.get(pipelineName.trim().toLowerCase(Locale.ROOT));
 		}
 
 		boolean isNew = pipeline == null;
@@ -2953,8 +3031,7 @@ public class LeadServiceImpl implements LeadService {
 		}
 
 		boolean pipelineChanged = false;
-		String pipelineName = toString(pipelineMap.get("pipelineName"));
-		if (pipelineName != null && !pipelineName.isEmpty() && !pipelineName.equals(pipeline.getName())) {
+		if (XamplifyUtils.isValidString(pipelineName) && !pipelineName.equals(pipeline.getName())) {
 			pipeline.setName(pipelineName);
 			pipelineChanged = true;
 		}
@@ -2980,11 +3057,12 @@ public class LeadServiceImpl implements LeadService {
 			if (isNew) {
 				genericDAO.save(pipeline);
 			} else {
-				genericDAO.merge(pipeline);
+				genericDAO.update(pipeline);
 			}
 		}
 
 		upsertLeadPipelineStages(pipeline, pipelineMap.get("stages"), adminId);
+		return pipeline;
 	}
 	
 	private void upsertLeadPipelineStages(Pipeline pipeline, Object stagesObject, Integer adminId) {
@@ -2998,12 +3076,18 @@ public class LeadServiceImpl implements LeadService {
 			}
 			Map<?, ?> stageMap = (Map<?, ?>) stageObject;
 			String externalStageId = toString(stageMap.get("pipelineStageId"));
-			if (externalStageId == null || externalStageId.isEmpty()) {
-				continue;
+			PipelineStage stage = null;
+			if (externalStageId != null && !externalStageId.isEmpty()) {
+				stage = pipelineDAO.getPipelineStageByExternalPipelineStageId(pipeline.getCompany().getId(),
+						pipeline.getId(), externalStageId, null);
+			}
+			
+			String stageName = toString(stageMap.get("stageName"));
+			if (stage == null && stageName != null && !stageName.isEmpty()) {
+				stage = pipelineDAO.getPipelineStageByExternalPipelineStageId(pipeline.getCompany().getId(),
+						pipeline.getId(), null, stageName);
 			}
 
-			PipelineStage stage = pipelineDAO.getPipelineStageByExternalPipelineStageId(pipeline.getCompany().getId(),
-					pipeline.getId(), externalStageId);
 			boolean isNew = stage == null;
 			if (isNew) {
 				stage = new PipelineStage();
@@ -3012,12 +3096,11 @@ public class LeadServiceImpl implements LeadService {
 			}
 
 			boolean stageChanged = false;
-			String stageName = toString(stageMap.get("stageName"));
 			if (stageName != null && !stageName.isEmpty() && !stageName.equals(stage.getStageName())) {
 				stage.setStageName(stageName);
 				stageChanged = true;
 			}
-			if (!externalStageId.equals(stage.getExternalPipelineStageId())) {
+			if (XamplifyUtils.isValidString(externalStageId) && !externalStageId.equals(stage.getExternalPipelineStageId())) {
 				stage.setExternalPipelineStageId(externalStageId);
 				stageChanged = true;
 			}
@@ -3047,7 +3130,7 @@ public class LeadServiceImpl implements LeadService {
 				if (isNew) {
 					genericDAO.save(stage);
 				} else {
-					genericDAO.merge(stage);
+					genericDAO.update(stage);
 				}
 			}
 		}

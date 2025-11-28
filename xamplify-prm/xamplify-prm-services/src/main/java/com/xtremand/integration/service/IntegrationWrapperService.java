@@ -60,5 +60,7 @@ public interface IntegrationWrapperService {
 
 	public XtremandResponse getActiveCRMCustomForm(Integer companyId, Integer opportunityId, Integer loggedInUserId,
 			OpportunityType opportunityType);
+	
+	XtremandResponse validateCustomCrmIntegration(String pat, Integer userId);
 
 }

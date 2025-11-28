@@ -17,8 +17,18 @@ import org.json.simple.parser.ParseException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Lazy;
+import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.RestClientResponseException;
+import org.springframework.web.client.RestTemplate;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.xtremand.common.bom.CompanyProfile;
@@ -174,6 +184,9 @@ public class IntegrationWrapperServiceImpl implements IntegrationWrapperService 
 	// XNFR-615
 	@Value("#{'${salesforce.lead.base.cf.names}'.split(',')}")
 	private List<String> salesforceBaseCustomFieldsForLead;
+
+	@Value("${xAmplify.base.url}")
+	private String baseUrl;
 
 	private static final String UNAUTHORIZED = "UnAuthorized";
 	private static final String SUCCESS = "Success";
@@ -1592,6 +1605,111 @@ public class IntegrationWrapperServiceImpl implements IntegrationWrapperService 
 			formDTO = customFieldsService.getCustomForm(companyId,opportunityId, loggedInUser, TypeId,
 					opportunityType);
 		return formDTO;
+	}
+	
+	@Override
+	public XtremandResponse validateCustomCrmIntegration(String pat, Integer userId) {
+		XtremandResponse response = new XtremandResponse();
+		if (!XamplifyUtils.isValidString(pat) || !XamplifyUtils.isValidInteger(userId)) {
+			response.setStatusCode(HttpStatus.BAD_REQUEST.value());
+			response.setMessage("PAT, companyId and userId are required.");
+			return response;
+		}
+		
+		Integer companyId = userDao.getCompanyIdByUserId(userId);
+		if (!XamplifyUtils.isValidInteger(companyId)) {
+			response.setStatusCode(HttpStatus.BAD_REQUEST.value());
+			response.setMessage("Company not found.");
+			return response;
+		}
+
+//		CompanyProfile companyProfile = genericDAO.get(CompanyProfile.class, companyId);
+//		if (companyProfile == null) {
+//			response.setStatusCode(HttpStatus.NOT_FOUND.value());
+//			response.setMessage("Company not found.");
+//			return response;
+//		}
+
+		Map<String, Object> contextResponse = null;
+		try {
+			contextResponse = fetchCustomCrmContext(pat);
+		} catch (RestClientResponseException ex) {
+			response.setStatusCode(ex.getRawStatusCode());
+			response.setMessage(
+					StringUtils.isNotBlank(ex.getStatusText()) ? ex.getStatusText() : "Failed to validate PAT.");
+			response.setData(ex.getResponseBodyAsString());
+			return response;
+		} catch (Exception ex) {
+			response.setStatusCode(HttpStatus.INTERNAL_SERVER_ERROR.value());
+			response.setMessage("Failed to validate PAT.");
+			return response;
+		}
+
+		if (contextResponse == null || contextResponse.isEmpty()) {
+			response.setStatusCode(HttpStatus.UNAUTHORIZED.value());
+			response.setMessage("Invalid PAT or no data returned.");
+			return response;
+		}
+
+		saveCustomCrmIntegration(companyId, pat, userId, contextResponse);
+		response.setStatusCode(HttpStatus.OK.value());
+		response.setMessage("PAT validated successfully.");
+		response.setData(contextResponse);
+		return response;
+	}
+	
+	private Map<String, Object> fetchCustomCrmContext(String pat) {
+		HttpHeaders headers = new HttpHeaders();
+		headers.set(HttpHeaders.AUTHORIZATION, "Bearer " + pat.trim());
+		headers.setAccept(Arrays.asList(MediaType.APPLICATION_JSON));
+		RestTemplate restTemplate = new RestTemplate();
+		ResponseEntity<Map<String, Object>> response = restTemplate.exchange(buildCustomCrmContextUrl(), HttpMethod.GET,
+				new HttpEntity<>(headers), new ParameterizedTypeReference<Map<String, Object>>() {
+				});
+		if (!response.getStatusCode().is2xxSuccessful()) {
+			throw new HttpClientErrorException(response.getStatusCode());
+		}
+		return response.getBody();
+	}
+	
+	private String buildCustomCrmContextUrl() {
+		if (!baseUrl.endsWith("/")) {
+			baseUrl = baseUrl + "/";
+		}
+		return baseUrl + "mcp/context";
+	}
+	
+	private String toString(Object value) {
+		return value != null ? String.valueOf(value) : null;
+	}
+	
+	private void saveCustomCrmIntegration(Integer companyId, String pat, Integer userId,
+			Map<String, Object> contextResponse) {
+		Integration integration = integrationDao.getUserIntegrationDetails(companyId,
+				IntegrationType.CUSTOM_CRM);
+		boolean isNew = integration == null;
+		if (isNew) {
+			CompanyProfile companyProfile = new CompanyProfile();
+			companyProfile.setId(companyId);
+			integration = new Integration();
+			integration.setCompany(companyProfile);
+			integration.setCreatedBy(userId);
+			integration.setType(IntegrationType.CUSTOM_CRM);
+		}
+
+		integration.setActive(true);
+		integration.setAccessToken(pat);
+		integration.setType(IntegrationType.CUSTOM_CRM);
+		integration.setExternalUserName(toString(contextResponse.get("username")));
+		integration.setExternalOrganizationName(toString(contextResponse.get("companyName")));
+		integration.setExternalUserId(toString(contextResponse.get("tokenId")));
+		integration.setExternalOrganizationId(toString(contextResponse.get("companyId")));
+		integration.initialiseCommonFields(isNew, userId);
+		if (isNew) {
+			genericDAO.save(integration);
+		} else {
+			genericDAO.update(integration);
+		}
 	}
 
 
