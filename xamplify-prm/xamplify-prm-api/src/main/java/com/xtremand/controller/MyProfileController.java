@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.xtremand.deal.service.DealService;
 import com.xtremand.formbeans.XtremandResponse;
 import com.xtremand.integration.dto.CustomCrmValidationRequestDto;
 import com.xtremand.integration.service.IntegrationWrapperService;
@@ -22,6 +23,9 @@ public class MyProfileController {
 
     @Autowired
     private LeadService leadService;
+    
+    @Autowired
+    private DealService dealService;
 
     @PostMapping("/custom-crm/validate")
     public ResponseEntity<XtremandResponse> validateCustomCrm(@RequestBody CustomCrmValidationRequestDto requestDto) {
@@ -33,8 +37,11 @@ public class MyProfileController {
             }
 
             if (status.is2xxSuccessful()) {
-                    leadService.saveLeadCustomFormFromMcp(requestDto.getUserId());
-                    leadService.saveLeadPipelinesFromMcp(requestDto.getUserId());
+            	Integer userId = requestDto.getUserId();
+                    leadService.saveLeadCustomFormFromMcp(userId);
+                    leadService.saveLeadPipelinesFromMcp(userId);
+                    dealService.saveDealCustomFormFromMcp(userId);
+                    dealService.saveDealPipelinesFromMcp(userId);
             }
 
             return new ResponseEntity<>(response, status);

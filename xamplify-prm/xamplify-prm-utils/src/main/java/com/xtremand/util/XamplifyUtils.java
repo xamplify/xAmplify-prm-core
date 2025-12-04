@@ -1826,7 +1826,7 @@ public class XamplifyUtils {
 			formTypeEnum = FormTypeEnum.CRM_LEAD_CUSTOM_FORM;
 			break;
 		case DEAL:
-			formTypeEnum = FormTypeEnum.XAMPLIFY_DEAL_CUSTOM_FORM;
+			formTypeEnum = FormTypeEnum.CRM_DEAL_CUSTOM_FORM;
 			break;
 		default:
 			formTypeEnum = FormTypeEnum.CRM_LEAD_CUSTOM_FORM;

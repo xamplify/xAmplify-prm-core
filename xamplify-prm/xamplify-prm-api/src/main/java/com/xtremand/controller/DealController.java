@@ -52,6 +52,7 @@ public class DealController {
 		} finally {
 			if (response.getStatusCode() == 200) {
 				dealDto.setId((Integer) response.getData());
+				asyncComponent.saveAndPushDealToxAmplify(dealDto);
 				asyncComponent.sendDealAddedOrUpdatedEmailToPartner(dealDto, false);
 			}
 		}
@@ -249,5 +250,15 @@ public class DealController {
 			@Valid ContactOpportunityRequestDTO contactOpportunityRequestDTO) {
 		return ResponseEntity.ok(dealService.fetchTotalDealAmountForCompanyJourney(contactOpportunityRequestDTO));
 	}
+	
+	@GetMapping(value = "/sync/custom-form/{userId}")
+    public ResponseEntity<XtremandResponse> syncCustomForm(@PathVariable Integer userId) {
+            return ResponseEntity.ok(dealService.saveDealCustomFormFromMcp(userId));
+    }
+
+    @GetMapping(value = "/sync/pipeline/{userId}")
+    public ResponseEntity<XtremandResponse> saveDealPipelinesFromMcp(@PathVariable Integer userId) {
+            return ResponseEntity.ok(dealService.saveDealPipelinesFromMcp(userId));
+    }
 
 }

@@ -14,6 +14,7 @@ import org.hibernate.SessionFactory;
 import org.hibernate.criterion.Order;
 import org.hibernate.criterion.Projections;
 import org.hibernate.criterion.Restrictions;
+import org.hibernate.type.StandardBasicTypes;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,10 +32,15 @@ import com.xtremand.util.XamplifyUtils;
 import com.xtremand.util.dao.HibernateSQLQueryResultUtilDao;
 import com.xtremand.util.dto.HibernateSQLQueryResultRequestDTO;
 import com.xtremand.util.dto.QueryParameterDTO;
+import com.xtremand.util.dto.QueryParameterListDTO;
 
 @Repository("PipelineDAO")
 @Transactional
 public class HibernatePipelineDAO implements PipelineDAO {
+
+	private static final String TARGET_STAGE_ID = "targetStageId";
+
+	private static final String TARGET_PIPELINE_ID = "targetPipelineId";
 
 	private static final String INTEGRATION_TYPE = "integrationType";
 
@@ -436,31 +442,14 @@ public class HibernatePipelineDAO implements PipelineDAO {
 		Integer targetStageId = targetStage != null ? targetStage.getId() : null;
 
 		Query pipelineUpdate = session.createSQLQuery(
-				"update xt_lead set pipeline_id = :targetPipelineId where pipeline_id in (:pipelineIds)");
-		pipelineUpdate.setParameter("targetPipelineId", targetPipelineId);
+				"update xt_lead set pipeline_id = :targetPipelineId, created_for_pipeline_id = :targetPipelineId, "
+				+ " pipeline_stage_id = :targetStageId, created_for_pipeline_stage_id = :targetStageId"
+				+ " where pipeline_id in (:pipelineIds)");
+		pipelineUpdate.setParameter(TARGET_PIPELINE_ID, targetPipelineId);
+		pipelineUpdate.setParameter(TARGET_STAGE_ID, targetStageId);
 		pipelineUpdate.setParameterList(PIPELINE_IDS, pipelineIds);
 		pipelineUpdate.executeUpdate();
-
-		Query createdForPipelineUpdate = session.createSQLQuery(
-				"update xt_lead set created_for_pipeline_id = :targetPipelineId where created_for_pipeline_id in (:pipelineIds)");
-		createdForPipelineUpdate.setParameter("targetPipelineId", targetPipelineId);
-		createdForPipelineUpdate.setParameterList(PIPELINE_IDS, pipelineIds);
-		createdForPipelineUpdate.executeUpdate();
-
-		if (targetStageId != null) {
-			Query stageUpdate = session.createSQLQuery(
-					"update xt_lead set pipeline_stage_id = :targetStageId where pipeline_id in (:pipelineIds)");
-			stageUpdate.setParameter("targetStageId", targetStageId);
-			stageUpdate.setParameterList(PIPELINE_IDS, pipelineIds);
-			stageUpdate.executeUpdate();
-
-			Query createdForStageUpdate = session.createSQLQuery(
-					"update xt_lead set created_for_pipeline_stage_id = :targetStageId where created_for_pipeline_id in (:pipelineIds)");
-			createdForStageUpdate.setParameter("targetStageId", targetStageId);
-			createdForStageUpdate.setParameterList(PIPELINE_IDS, pipelineIds);
-			createdForStageUpdate.executeUpdate();
-
-		}
+		
 	}
 
 	@Override
@@ -480,6 +469,91 @@ public class HibernatePipelineDAO implements PipelineDAO {
 		stageQuery.setParameter("pipelineId", pipelineId);
 		stageQuery.setMaxResults(1);
 		return (PipelineStage) stageQuery.uniqueResult();
+	}
+	
+	@Override
+	public void reassignDealPipelines(List<Pipeline> pipelinesToRemove, Pipeline targetPipeline) {
+		if (pipelinesToRemove == null || pipelinesToRemove.isEmpty() || targetPipeline == null
+				|| targetPipeline.getId() == null) {
+			return;
+		}
+
+		List<Integer> pipelineIds = pipelinesToRemove.stream().map(Pipeline::getId).filter(Objects::nonNull)
+				.collect(Collectors.toList());
+		if (pipelineIds.isEmpty()) {
+			return;
+		}
+
+		Session session = sessionFactory.getCurrentSession();
+		Integer targetPipelineId = targetPipeline.getId();
+		PipelineStage targetStage = findFallbackStage(targetPipelineId);
+		Integer targetStageId = targetStage != null ? targetStage.getId() : null;
+
+		Query pipelineUpdate = session.createSQLQuery(
+				"update xt_deal set pipeline_id = :targetPipelineId, created_for_pipeline_id = :targetPipelineId, "
+				+ "pipeline_stage_id = :targetStageId, created_for_pipeline_stage_id = :targetStageId "
+				+ " where pipeline_id in (:pipelineIds)");
+		pipelineUpdate.setParameter(TARGET_PIPELINE_ID, targetPipelineId);
+		pipelineUpdate.setParameter(TARGET_STAGE_ID, targetStageId);
+		pipelineUpdate.setParameterList(PIPELINE_IDS, pipelineIds);
+		pipelineUpdate.executeUpdate();
+
+//		Query createdForPipelineUpdate = session.createSQLQuery(
+//				"update xt_deal set created_for_pipeline_id = :targetPipelineId where created_for_pipeline_id in (:pipelineIds)");
+//		createdForPipelineUpdate.setParameter(TARGET_PIPELINE_ID, targetPipelineId);
+//		createdForPipelineUpdate.setParameterList(PIPELINE_IDS, pipelineIds);
+//		createdForPipelineUpdate.executeUpdate();
+//
+//		if (targetStageId != null) {
+//			Query stageUpdate = session.createSQLQuery(
+//					"update xt_deal set pipeline_stage_id = :targetStageId where pipeline_id in (:pipelineIds)");
+//			stageUpdate.setParameter(TARGET_STAGE_ID, targetStageId);
+//			stageUpdate.setParameterList(PIPELINE_IDS, pipelineIds);
+//			stageUpdate.executeUpdate();
+//
+//			Query createdForStageUpdate = session.createSQLQuery(
+//					"update xt_deal set created_for_pipeline_stage_id = :targetStageId where created_for_pipeline_id in (:pipelineIds)");
+//			createdForStageUpdate.setParameter(TARGET_STAGE_ID, targetStageId);
+//			createdForStageUpdate.setParameterList(PIPELINE_IDS, pipelineIds);
+//			createdForStageUpdate.executeUpdate();
+//
+//		}
+	}
+	
+	@Override
+	public void deletePipelineStages(List<Pipeline> pipelinesToRemove) {
+		if (pipelinesToRemove == null || pipelinesToRemove.isEmpty()) {
+			return;
+		}
+
+		List<Integer> pipelineIds = pipelinesToRemove.stream().map(Pipeline::getId).filter(Objects::nonNull)
+				.collect(Collectors.toList());
+		if (pipelineIds.isEmpty()) {
+			return;
+		}
+
+		Session session = sessionFactory.getCurrentSession();
+		Query stageDelete = session.createSQLQuery("delete from xt_pipeline_stage where pipeline_id in (:pipelineIds)");
+		stageDelete.setParameterList(PIPELINE_IDS, pipelineIds);
+		stageDelete.executeUpdate();
+	}
+	
+	@Override
+	public void deletePipelines(List<Pipeline> pipelinesToRemove) {
+		if (pipelinesToRemove == null || pipelinesToRemove.isEmpty()) {
+			return;
+		}
+
+		List<Integer> pipelineIds = pipelinesToRemove.stream().map(Pipeline::getId).filter(Objects::nonNull)
+				.collect(Collectors.toList());
+		if (pipelineIds.isEmpty()) {
+			return;
+		}
+
+		Session session = sessionFactory.getCurrentSession();
+		Query pipelineDelete = session.createSQLQuery("delete from xt_pipeline where id in (:pipelineIds)");
+		pipelineDelete.setParameterList(PIPELINE_IDS, pipelineIds);
+		pipelineDelete.executeUpdate();
 	}
 
 }

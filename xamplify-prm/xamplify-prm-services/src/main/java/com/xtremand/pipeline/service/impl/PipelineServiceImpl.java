@@ -28,6 +28,7 @@ import com.xtremand.common.bom.Pagination;
 import com.xtremand.dao.util.GenericDAO;
 import com.xtremand.deal.bom.Deal;
 import com.xtremand.formbeans.XtremandResponse;
+import com.xtremand.integration.bom.Integration;
 import com.xtremand.integration.bom.Integration.IntegrationType;
 import com.xtremand.integration.dao.IntegrationDao;
 import com.xtremand.integration.dto.IntegrationDTO;
@@ -766,6 +767,10 @@ public class PipelineServiceImpl implements PipelineService {
 		Integer responseStatusCode = 400;
 		if (loggedInUserId != null && loggedInUserId > 0 && companyId != null && companyId > 0 && type != null) {
 			Integer loggedInCompanyId = userService.getCompanyIdByUserId(loggedInUserId);
+			Integration integration = integrationDao.getActiveCRMIntegration(companyId);
+			if (integration != null && integration.getType() != null) {
+				integrationType = integration.getType();
+			}
 			if (loggedInCompanyId != null) {
 				List<Pipeline> pipelines = null;
 				if (!loggedInCompanyId.equals(companyId)) {

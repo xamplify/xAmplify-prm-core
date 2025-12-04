@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -57,6 +58,7 @@ import com.xtremand.deal.bom.Deal;
 import com.xtremand.form.bom.Form;
 import com.xtremand.form.bom.FormDefaultFieldTypeEnum;
 import com.xtremand.form.bom.FormLabel;
+import com.xtremand.form.bom.FormLabelChoice;
 import com.xtremand.form.bom.FormTypeEnum;
 import com.xtremand.form.dao.FormDao;
 import com.xtremand.form.dto.FormChoiceDTO;
@@ -124,6 +126,8 @@ import com.xtremand.vendor.bom.VendorDTO;
 @Service("LeadService")
 @Transactional
 public class LeadServiceImpl implements LeadService {
+	private static final String BEARER = "Bearer ";
+
 	private static final String LABEL_NAME = "labelName";
 
 	private static final String ACCOUNT_SUB_TYPE = "account_sub_type";
@@ -2509,7 +2513,7 @@ public class LeadServiceImpl implements LeadService {
 		}
 
 		HttpHeaders headers = new HttpHeaders();
-		headers.set(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken.trim());
+		headers.set(HttpHeaders.AUTHORIZATION, BEARER + accessToken.trim());
 		headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
 
 		HttpEntity<Void> entity = new HttpEntity<>(headers);
@@ -2540,16 +2544,8 @@ public class LeadServiceImpl implements LeadService {
 
 
 	private IntegrationType resolveIntegrationType(Object integrationType) {
-		if (integrationType instanceof String) {
-//			try {
-//				return IntegrationType.valueOf(((String) integrationType).trim().toUpperCase(Locale.ROOT));
-//			} catch (IllegalArgumentException ex) {
-//				ex.printStackTrace();
-//			}
-			
-			if (!((String) integrationType).isEmpty()) {
-				return IntegrationType.CUSTOM_CRM;
-			}
+		if (integrationType instanceof String && !((String) integrationType).isEmpty()) {
+			return IntegrationType.CUSTOM_CRM;
 		}
 		return IntegrationType.XAMPLIFY;
 	}
@@ -2558,7 +2554,9 @@ public class LeadServiceImpl implements LeadService {
 		return FormTypeEnum.CRM_LEAD_CUSTOM_FORM;
 	}
 	
-	private FormDTO buildLeadCustomFormDto(Integer companyId, FormTypeEnum formType, Object fields) {
+	private FormDTO buildLeadCustomFormDto(Integer companyId, FormTypeEnum formType, Object fields,
+			Map<String, FormLabel> existingLabelsById, List<LeadField> defaultLeadFields,
+			Map<String, LeadField> defaultLeadFieldsById) {
 		CompanyProfile companyProfile = genericDAO.get(CompanyProfile.class, companyId);
 		if (companyProfile == null) {
 			return null;
@@ -2578,14 +2576,12 @@ public class LeadServiceImpl implements LeadService {
 		formDto.setCreatedBy(adminId);
 		formDto.setUpdatedBy(adminId);
 
-		List<FormLabelDTO> formLabelDTOs = buildLeadCustomFormLabels(fields);
+		List<FormLabelDTO> formLabelDTOs = buildLeadCustomFormLabels(fields, existingLabelsById, defaultLeadFields,
+				defaultLeadFieldsById);
 		if (formLabelDTOs.isEmpty()) {
 			return null;
 		}
 		formDto.setFormLabelDTOs(formLabelDTOs);
-//		FormLabelDTORow formLabelDTORow = new FormLabelDTORow();
-//		formLabelDTORow.setFormLabelDTOs(formLabelDTOs);
-//		formDto.setFormLabelDTORows(Collections.singletonList(formLabelDTORow));
 		formDto.setFormLabelDTORows(utilService.constructFormRows(formLabelDTOs));
 		return formDto;
 	}
@@ -2611,20 +2607,34 @@ public class LeadServiceImpl implements LeadService {
 			if (formType == null) {
 				return response;
 			}
+			
+			Integer formId = formDao.getSfCustomFormIdByCompanyIdAndFormType(companyId, formType);
+			Form existingForm = XamplifyUtils.isValidInteger(formId) ? formDao.getById(formId) : null;
+			Map<String, FormLabel> existingLabelsById = existingForm != null ? existingForm.getFormLabels().stream()
+					.filter(Objects::nonNull)
+					.filter(label -> label.getLabelId() != null && !label.getLabelId().isEmpty())
+					.collect(Collectors.toMap(label -> label.getLabelId().trim(), Function.identity(), (a, b) -> a))
+					: Collections.emptyMap();
 
-			FormDTO formDto = buildLeadCustomFormDto(companyId, formType, formResponse.get("fields"));
+			Object fields = formResponse.get("fields");
+			List<LeadField> defaultLeadFields = Collections.emptyList();
+			Map<String, LeadField> defaultLeadFieldsById = Collections.emptyMap();
+			if (!(fields instanceof List<?>) || ((List<?>) fields).isEmpty()) {
+				defaultLeadFields = leadDAO.getDefaultLeadFilds();
+				defaultLeadFieldsById = defaultLeadFields.stream().filter(Objects::nonNull)
+						.filter(field -> XamplifyUtils.isValidString(field.getLabelId()))
+						.collect(Collectors.toMap(field -> field.getLabelId().trim(), Function.identity(), (a, b) -> a,
+								LinkedHashMap::new));
+			}
+
+			FormDTO formDto = buildLeadCustomFormDto(companyId, formType, fields, existingLabelsById, defaultLeadFields,
+					defaultLeadFieldsById);
 			if (formDto == null) {
 				return response;
 			}
 
-			Integer formId = formDao.getSfCustomFormIdByCompanyIdAndFormType(companyId, formType);
+//			Integer formId = formDao.getSfCustomFormIdByCompanyIdAndFormType(companyId, formType);
 			if (XamplifyUtils.isValidInteger(formId)) {
-				Form existingForm = formDao.getById(formId);
-				Map<String, FormLabel> existingLabelsById = existingForm != null
-						? existingForm.getFormLabels().stream().filter(Objects::nonNull)
-								.filter(label -> label.getLabelId() != null && !label.getLabelId().isEmpty()).collect(Collectors
-										.toMap(label -> label.getLabelId().trim(), Function.identity(), (a, b) -> a))
-						: Collections.emptyMap();
 				Set<String> incomingLabelIds = new HashSet<>();
 				if (formDto.getFormLabelDTOs() != null) {
 					for (FormLabelDTO labelDTO : formDto.getFormLabelDTOs()) {
@@ -2641,7 +2651,8 @@ public class LeadServiceImpl implements LeadService {
 				}
 
 				for (FormLabel existingLabel : existingLabelsById.values()) {
-					if (existingLabel != null && existingLabel.getLabelId() != null && !existingLabel.getLabelId().isEmpty()
+					if (existingLabel != null && existingLabel.getLabelId() != null
+							&& !existingLabel.getLabelId().isEmpty()
 							&& !incomingLabelIds.contains(existingLabel.getLabelId().trim())) {
 						sfCustomFormDataDAO.deleteCustomFormLabelByFieldId(existingLabel.getId());
 						formDao.deleteSfCustomLabelById(existingLabel.getId());
@@ -2770,7 +2781,7 @@ public class LeadServiceImpl implements LeadService {
 	    String url = baseUrl + "mcp/leads";
 
 	    HttpHeaders headers = new HttpHeaders();
-	    headers.set(HttpHeaders.AUTHORIZATION, "Bearer " + patToken.trim());
+	    headers.set(HttpHeaders.AUTHORIZATION, BEARER + patToken.trim());
 	    headers.setContentType(MediaType.APPLICATION_JSON);
 	    headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
 
@@ -2864,7 +2875,7 @@ public class LeadServiceImpl implements LeadService {
 		}
 
 		HttpHeaders headers = new HttpHeaders();
-		headers.set(HttpHeaders.AUTHORIZATION, "Bearer " + xAmplifyPat.trim());
+		headers.set(HttpHeaders.AUTHORIZATION, BEARER + xAmplifyPat.trim());
 		headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
 
 		HttpEntity<Void> entity = new HttpEntity<>(headers);
@@ -2894,6 +2905,7 @@ public class LeadServiceImpl implements LeadService {
 	}
 	
 	@Override
+	@Transactional
 	public XtremandResponse saveLeadPipelinesFromMcp(Integer userId) {
 		XtremandResponse response = new XtremandResponse();
 		if (!XamplifyUtils.isValidInteger(userId) || !XamplifyUtils.isValidString(xAmplifyPat)) {
@@ -2960,9 +2972,8 @@ public class LeadServiceImpl implements LeadService {
 
 		if (!pipelinesToRemove.isEmpty() && defaultPipeline != null) {
 			pipelineDAO.reassignLeadPipelines(pipelinesToRemove, defaultPipeline);
-			for (Pipeline pipeline : pipelinesToRemove) {
-				genericDAO.remove(pipeline);
-			}
+			pipelineDAO.deletePipelineStages(pipelinesToRemove);
+			pipelineDAO.deletePipelines(pipelinesToRemove);
 		}
 
 		response.setStatusCode(200);
@@ -3134,6 +3145,229 @@ public class LeadServiceImpl implements LeadService {
 				}
 			}
 		}
+	}
+	
+	private void mergeDefaultLeadField(FormLabelDTO dto, LeadField defaultLeadField, int order) {
+		if (!XamplifyUtils.isValidString(dto.getLabelName())) {
+			dto.setLabelName(defaultLeadField.getLabelName());
+		}
+		if (!XamplifyUtils.isValidString(dto.getDisplayName())) {
+			dto.setDisplayName(defaultLeadField.getLabelName());
+		}
+		if (!XamplifyUtils.isValidString(dto.getLabelType())) {
+			dto.setLabelType(defaultLeadField.getLabelType());
+		}
+		if (dto.getOrder() == null) {
+			dto.setOrder(order);
+		}
+		if (dto.getColumnOrder() == 0) {
+			dto.setColumnOrder(order);
+		}
+	}
+	
+	private FormLabelDTO convertLeadFieldToDto(LeadField leadField, FormLabel existingLabel, int order) {
+		FormLabelDTO dto = new FormLabelDTO();
+		dto.setLabelId(leadField.getLabelId());
+		dto.setHiddenLabelId(leadField.getLabelId());
+		dto.setLabelName(leadField.getLabelName());
+		dto.setDisplayName(leadField.getLabelName());
+		String labelType = leadField.getLabelType();
+		if ("Text Area".equals(labelType)) {
+			labelType = "TextArea";
+		}
+		dto.setLabelType(labelType.toLowerCase());
+		dto.setOrder(order);
+		dto.setColumnOrder(order);
+		dto.setRequired(false);
+		dto.setActive(true);
+		if (existingLabel != null) {
+			dto.setId(existingLabel.getId());
+			if (existingLabel.getFormDefaultFieldType() != null) {
+				dto.setFormDefaultFieldType(existingLabel.getFormDefaultFieldType());
+			}
+			if (existingLabel.getFormLookUpDefaultFieldType() != null) {
+				dto.setFormLookUpDefaultFieldType(existingLabel.getFormLookUpDefaultFieldType());
+			}
+			dto.setFormFieldType(existingLabel.getFormFieldType());
+			dto.setPrivate(existingLabel.isPrivate());
+			dto.setNonInteractive(existingLabel.isNonInteractive());
+			dto.setEmailNotificationEnabledOnUpdate(existingLabel.isEmailNotificationEnabledOnUpdate());
+			if (existingLabel.getDefaultChoice() != null) {
+				dto.setDefaultChoiceId(existingLabel.getDefaultChoice().getId());
+				dto.setDefaultChoiceLabel(existingLabel.getDefaultChoice().getLabelChoiceName());
+			}
+			applyChoicesByType(dto, convertFormLabelChoices(existingLabel.getFormLabelChoices()));
+		}
+		return dto;
+	}
+	
+	private List<FormChoiceDTO> convertFormLabelChoices(List<FormLabelChoice> formLabelChoices) {
+		List<FormChoiceDTO> choiceDTOs = new ArrayList<>();
+		if (formLabelChoices == null) {
+			return choiceDTOs;
+		}
+		for (FormLabelChoice choice : formLabelChoices) {
+			if (choice == null) {
+				continue;
+			}
+			FormChoiceDTO choiceDTO = new FormChoiceDTO();
+			choiceDTO.setId(choice.getId());
+			choiceDTO.setLabelId(choice.getLabelChoiceId());
+			choiceDTO.setHiddenLabelId(choice.getLabelChoiceHiddenId());
+			choiceDTO.setName(choice.getLabelChoiceName());
+			choiceDTO.setDefaultColumn(choice.isDefaultColumn());
+			choiceDTOs.add(choiceDTO);
+		}
+		return choiceDTOs;
+	}
+	
+	private FormLabelDTO convertFormLabelToDto(FormLabel formLabel) {
+		FormLabelDTO dto = new FormLabelDTO();
+		dto.setId(formLabel.getId());
+		dto.setLabelId(formLabel.getLabelId());
+		dto.setHiddenLabelId(formLabel.getHiddenLabelId());
+		dto.setLabelName(formLabel.getLabelName());
+		dto.setDisplayName(formLabel.getDisplayName());
+		dto.setLabelType(formLabel.getLabelType() != null ? formLabel.getLabelType().getLabelType() : null);
+		dto.setPlaceHolder(formLabel.getPlaceHolder());
+		dto.setOrder(formLabel.getOrder());
+		dto.setRequired(formLabel.isRequired());
+		dto.setDefaultColumn(formLabel.isDefaultColumn());
+		dto.setDescription(formLabel.getDescription());
+		dto.setFormDefaultFieldType(formLabel.getFormDefaultFieldType());
+		dto.setColumnOrder(formLabel.getColumnOrder() != null ? formLabel.getColumnOrder() : 0);
+		dto.setNonInteractive(formLabel.isNonInteractive());
+		dto.setDefaultChoiceId(formLabel.getDefaultChoice() != null ? formLabel.getDefaultChoice().getId() : null);
+		dto.setDefaultChoiceLabel(
+				formLabel.getDefaultChoice() != null ? formLabel.getDefaultChoice().getLabelChoiceName() : null);
+		dto.setPrivate(formLabel.isPrivate());
+		dto.setFormLookUpDefaultFieldType(formLabel.getFormLookUpDefaultFieldType());
+		dto.setFormFieldType(formLabel.getFormFieldType());
+		dto.setActive(formLabel.isActive());
+		dto.setEmailNotificationEnabledOnUpdate(formLabel.isEmailNotificationEnabledOnUpdate());
+		applyChoicesByType(dto, convertFormLabelChoices(formLabel.getFormLabelChoices()));
+		return dto;
+	}
+	
+	private List<FormLabelDTO> buildLabelsFromDefaults(List<LeadField> defaultLeadFields,
+			Map<String, FormLabel> existingLabels) {
+		if (defaultLeadFields == null || defaultLeadFields.isEmpty()) {
+			if (existingLabels == null || existingLabels.isEmpty()) {
+				return Collections.emptyList();
+			}
+			return existingLabels.values().stream().filter(Objects::nonNull)
+					.sorted(Comparator.comparing(FormLabel::getOrder, Comparator.nullsLast(Integer::compareTo)))
+					.map(this::convertFormLabelToDto).collect(Collectors.toList());
+		}
+		Map<String, FormLabel> labelsById = existingLabels != null ? existingLabels : Collections.emptyMap();
+		List<FormLabelDTO> formLabelDTOs = new ArrayList<>();
+		int order = 1;
+		for (LeadField leadField : defaultLeadFields) {
+			if (leadField == null || !XamplifyUtils.isValidString(leadField.getLabelId())) {
+				continue;
+			}
+			String labelId = leadField.getLabelId().trim();
+			FormLabel existingLabel = labelsById.get(labelId);
+			FormLabelDTO dto = convertLeadFieldToDto(leadField, existingLabel, order++);
+			formLabelDTOs.add(dto);
+		}
+		return formLabelDTOs;
+	}
+	
+	private List<FormLabelDTO> buildLeadCustomFormLabels(Object fieldsObject, Map<String, FormLabel> existingLabels,
+			List<LeadField> defaultLeadFields, Map<String, LeadField> defaultLeadFieldsById) {
+		Map<String, FormLabel> labelsById = existingLabels != null ? existingLabels : Collections.emptyMap();
+		if (!(fieldsObject instanceof List<?>)) {
+			return buildLabelsFromDefaults(defaultLeadFields, labelsById);
+		}
+		List<?> fieldList = (List<?>) fieldsObject;
+		if (fieldList.isEmpty()) {
+			return buildLabelsFromDefaults(defaultLeadFields, labelsById);
+		}
+		List<FormLabelDTO> labels = new ArrayList<>();
+		int order = 1;
+		for (Object fieldObject : fieldList) {
+			if (!(fieldObject instanceof Map<?, ?>)) {
+				continue;
+			}
+			Map<?, ?> fieldMap = (Map<?, ?>) fieldObject;
+			String labelId = toString(fieldMap.get("labelId"));
+			if (!XamplifyUtils.isValidString(labelId)) {
+				labelId = toString(fieldMap.get(LABEL_NAME));
+			}
+			if (!XamplifyUtils.isValidString(labelId)) {
+				continue;
+			}
+
+			FormLabelDTO dto = new FormLabelDTO();
+			dto.setLabelId(labelId);
+			dto.setHiddenLabelId(toString(fieldMap.get("hiddenFieldName")));
+			dto.setLabelName(toString(fieldMap.get(LABEL_NAME)));
+			dto.setDisplayName(toString(fieldMap.get(LABEL_NAME)));
+			dto.setLabelType(toString(fieldMap.get("labelType")));
+			Object requiredValue = fieldMap.get("required");
+			dto.setRequired(requiredValue instanceof Boolean ? (Boolean) requiredValue : false);
+			dto.setPlaceHolder(toString(fieldMap.get("placeholder")));
+			dto.setDescription(toString(fieldMap.get("description")));
+			dto.setOrder((Integer) fieldMap.get("order"));
+			dto.setColumnOrder(order++);
+			dto.setFormDefaultFieldType(null);
+			dto.setActive(true);
+
+			List<FormChoiceDTO> choiceDTOs = buildChoiceDtos(fieldMap.get("options"),
+					fieldMap.get("defaultChoiceValue"));
+			FormLabel existingLabel = labelsById.get(labelId);
+			if (existingLabel != null) {
+				dto.setId(existingLabel.getId());
+				if (!XamplifyUtils.isValidString(dto.getLabelName())) {
+					dto.setLabelName(existingLabel.getLabelName());
+				}
+				if (!XamplifyUtils.isValidString(dto.getDisplayName())) {
+					dto.setDisplayName(existingLabel.getDisplayName());
+				}
+				if (!XamplifyUtils.isValidString(dto.getPlaceHolder())) {
+					dto.setPlaceHolder(existingLabel.getPlaceHolder());
+				}
+				if (!XamplifyUtils.isValidString(dto.getDescription())) {
+					dto.setDescription(existingLabel.getDescription());
+				}
+				if (dto.getOrder() == null) {
+					dto.setOrder(existingLabel.getOrder());
+				}
+				if (dto.getColumnOrder() == 0 && existingLabel.getColumnOrder() != null) {
+					dto.setColumnOrder(existingLabel.getColumnOrder());
+				}
+				if (dto.getLabelType() == null && existingLabel.getLabelType() != null) {
+					dto.setLabelType(existingLabel.getLabelType().getLabelType());
+				}
+				if (requiredValue == null) {
+					dto.setRequired(existingLabel.isRequired());
+				}
+				if (dto.getFormDefaultFieldType() == null) {
+					dto.setFormDefaultFieldType(existingLabel.getFormDefaultFieldType());
+				}
+				dto.setPrivate(existingLabel.isPrivate());
+				dto.setFormLookUpDefaultFieldType(existingLabel.getFormLookUpDefaultFieldType());
+				dto.setFormFieldType(existingLabel.getFormFieldType());
+				dto.setNonInteractive(existingLabel.isNonInteractive());
+				dto.setEmailNotificationEnabledOnUpdate(existingLabel.isEmailNotificationEnabledOnUpdate());
+				if (dto.getDefaultChoiceId() == null && existingLabel.getDefaultChoice() != null) {
+					dto.setDefaultChoiceId(existingLabel.getDefaultChoice().getId());
+					dto.setDefaultChoiceLabel(existingLabel.getDefaultChoice().getLabelChoiceName());
+				}
+				if (choiceDTOs.isEmpty()) {
+					choiceDTOs = convertFormLabelChoices(existingLabel.getFormLabelChoices());
+				}
+			} else {
+				LeadField defaultLeadField = defaultLeadFieldsById.get(labelId);
+				if (defaultLeadField != null) {
+					mergeDefaultLeadField(dto, defaultLeadField, order);
+				}
+			}
+			applyChoicesByType(dto, choiceDTOs);
+			labels.add(dto);
+		}
+		return labels;
 	}
 
 }

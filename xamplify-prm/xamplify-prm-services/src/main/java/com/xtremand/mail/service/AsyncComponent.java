@@ -568,5 +568,10 @@ public class AsyncComponent {
 	public void saveAndPushLeadToxAmplify(LeadDto leadDto) {
 		asyncService.saveAndPushLeadToxAmplify(leadDto);
 	}
+	
+	@Async(value = "saveAndPushDealToxAmplify")
+    public void saveAndPushDealToxAmplify(DealDto dealDto) {
+            asyncService.saveAndPushDealToxAmplify(dealDto);
+    }
 
 }

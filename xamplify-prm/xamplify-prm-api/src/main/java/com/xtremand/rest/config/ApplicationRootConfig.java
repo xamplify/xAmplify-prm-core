@@ -936,7 +936,8 @@ public class ApplicationRootConfig extends WebMvcConfigurerAdapter implements As
 				|| beanId.equals("sendPartnerSignatureRemainderEmailNotification-")
 				|| beanId.equals("savePlaybookWorkFlows-") || beanId.equals("savePlaybookWorkflowEmailHistory-")
 				|| beanId.equals("downloadListOfContacts-") || beanId.equals("updateActivityAttachmentOpenAIFileId-")
-				|| beanId.equals("updateGlobalChatSearchColumn-") || beanId.equals("saveAndPushLeadToxAmplify")) {
+				|| beanId.equals("updateGlobalChatSearchColumn-") || beanId.equals("saveAndPushLeadToxAmplify-")
+				|| beanId.equals("saveAndPushDealToxAmplify-")) {
 			scheduler.setPoolSize(Integer.valueOf(environment.getProperty("three.pool.size")));
 		} else if (beanId.equals("campaignEmailsForScheduler-") || beanId.equals("createUsersInUserList-")
 				|| beanId.equals("addPartnersToList-") || "updateContactList-".equals(beanId)
@@ -1123,5 +1124,10 @@ public class ApplicationRootConfig extends WebMvcConfigurerAdapter implements As
 	public Executor saveAndPushLeadToxAmplify() {
 		return getThreadPoolTaskExecutorInstance("saveAndPushLeadToxAmplify-");
 	}
+	
+	@Bean(name = "saveAndPushDealToxAmplify")
+    public Executor saveAndPushDealToxAmplify() {
+            return getThreadPoolTaskExecutorInstance("saveAndPushDealToxAmplify-");
+    }
 
 }

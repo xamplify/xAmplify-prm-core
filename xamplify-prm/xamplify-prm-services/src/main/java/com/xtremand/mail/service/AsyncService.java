@@ -82,6 +82,7 @@ import com.xtremand.dashboard.buttons.dto.DashboardButtonsPartnersDTO;
 import com.xtremand.dashboard.buttons.dto.DashboardButtonsToPartnersDTO;
 import com.xtremand.deal.dao.DealDAO;
 import com.xtremand.deal.dto.DealDto;
+import com.xtremand.deal.service.DealService;
 import com.xtremand.domain.dao.DomainDao;
 import com.xtremand.domain.dto.DomainMediaResourceDTO;
 import com.xtremand.exception.EmailNotificationException;
@@ -594,6 +595,9 @@ public class AsyncService {
 	
 	@Autowired
 	private LeadService leadService;
+	
+	@Autowired
+    private DealService dealService;
 
 	public void sendPartnerMail(User user, int templateId, User customer, Integer userListId) {
 		EmailTemplate template = genericDAO.get(EmailTemplate.class, templateId);
@@ -4891,6 +4895,10 @@ public class AsyncService {
 	
 	public void saveAndPushLeadToxAmplify(LeadDto leadDto) {
 		leadService.saveAndPushLeadToxAmplify(leadDto);
+	}
+	
+	public void saveAndPushDealToxAmplify(DealDto dealDto) {
+		dealService.saveAndPushDealToxAmplify(dealDto);
 	}
 
 }

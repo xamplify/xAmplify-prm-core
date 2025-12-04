@@ -1313,8 +1313,8 @@ public class FormServiceImpl implements FormService {
 				formDao.save(choice);
 			}
 		}
-		if (formLabel.getLabelType().getLabelType().equalsIgnoreCase("quiz_radio")
-				|| formLabel.getLabelType().getLabelType().equalsIgnoreCase("quiz_checkbox")) {
+		if (formLabel.getLabelType() != null && (formLabel.getLabelType().getLabelType().equalsIgnoreCase("quiz_radio")
+				|| formLabel.getLabelType().getLabelType().equalsIgnoreCase("quiz_checkbox"))) {
 			if (count == 0) {
 				response.setStatusCode(400);
 				response.setMessage("Default answer is mandatory");

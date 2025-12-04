@@ -105,4 +105,10 @@ public interface DealService {
 	public XtremandResponse fetchTotalDealAmountForCompanyJourney(
 			ContactOpportunityRequestDTO contactOpportunityRequestDTO);
 
+	XtremandResponse saveDealCustomFormFromMcp(Integer userId);
+
+	XtremandResponse saveDealPipelinesFromMcp(Integer userId);
+	
+	public void saveAndPushDealToxAmplify(DealDto dealDto);
+
 }

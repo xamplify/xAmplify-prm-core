@@ -81,5 +81,11 @@ public interface PipelineDAO {
 	public void reassignLeadPipelines(List<Pipeline> pipelinesToRemove, Pipeline targetPipeline);
 
     public PipelineStage findFallbackStage(Integer pipelineId);
+    
+    public void reassignDealPipelines(List<Pipeline> pipelinesToRemove, Pipeline targetPipeline);
+    
+    public void deletePipelineStages(List<Pipeline> pipelinesToRemove);
+    
+    public void deletePipelines(List<Pipeline> pipelinesToRemove);
 
 }
