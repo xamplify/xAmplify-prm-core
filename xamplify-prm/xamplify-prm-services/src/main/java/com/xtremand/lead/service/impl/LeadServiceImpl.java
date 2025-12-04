@@ -3369,5 +3369,89 @@ public class LeadServiceImpl implements LeadService {
 		}
 		return labels;
 	}
+	
+	@Override
+	public void updateAndPushLeadToxAmplify(LeadDto leadDto) {
+		if (leadDto != null && leadDto.getId() != null && leadDto.getId() > 0) {
+			try {
+				populateLeadDtoForXamplifySync(leadDto);
+				updatePrmLead(xAmplifyPat, leadDto);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
+	}
+	
+	private void populateLeadDtoForXamplifySync(LeadDto leadDto) {
+		UserDTO userDTO = userDao.getSendorCompanyDetailsByUserId(leadDto.getUserId());
+		if (userDTO != null) {
+			leadDto.setCreatedByCompanyName(userDTO.getCompanyName());
+			leadDto.setPartnerCompanyId(userDTO.getCompanyId());
+			leadDto.setCreatedByEmail(userDTO.getEmailId());
+			leadDto.setCreatedByName(userDTO.getFullName());
+		}
+		leadDto.setLeadId(leadDto.getId());
+		PipelineDto pipelineDto = pipelineDAO.fetchPipelineDetailsByPipelineId(leadDto.getCreatedForPipelineId());
+		PipelineStageDto pipelineStageDto = pipelineDAO.fetchPipelineStageDetailsByPipelineStageId(leadDto.getCreatedForPipelineStageId());
+		leadDto.setExternalPipelineId(pipelineDto.getExternalPipelineId());
+		leadDto.setExternalPipelineStageId(pipelineStageDto.getExternalPipelineStageId());
+		leadDto.setPipelineName(pipelineDto.getName());
+		leadDto.setPipelineStageName(pipelineStageDto.getStageName());
+	}
+	
+	private Map<String, Object> updatePrmLead(String patToken, LeadDto leadDto) throws XamplifyDataAccessException {
+
+		if (!XamplifyUtils.isValidString(patToken)) {
+			throw new IllegalArgumentException("patToken is required");
+		}
+		if (leadDto == null) {
+			throw new IllegalArgumentException("leadDto is required");
+		}
+
+		if (!baseUrl.endsWith("/")) {
+			baseUrl = baseUrl + "/";
+		}
+		String url = baseUrl + "mcp/leads/updateLead";
+
+		HttpHeaders headers = new HttpHeaders();
+		headers.set(HttpHeaders.AUTHORIZATION, BEARER + patToken.trim());
+		headers.setContentType(MediaType.APPLICATION_JSON);
+		headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
+
+		HttpEntity<LeadDto> requestEntity = new HttpEntity<>(leadDto, headers);
+		RestTemplate restTemplate = new RestTemplate();
+
+		try {
+			ResponseEntity<Map<String, Object>> response = restTemplate.exchange(url, HttpMethod.POST, requestEntity,
+					new ParameterizedTypeReference<Map<String, Object>>() {
+					});
+
+			HttpStatus status = response.getStatusCode();
+
+			if (status.is2xxSuccessful()) {
+				return response.getBody();
+			} else if (status == HttpStatus.UNAUTHORIZED) {
+				throw new XamplifyDataAccessException("Received 401 Unauthorized calling updatePRMLead at URL: " + url);
+			} else if (status == HttpStatus.FORBIDDEN) {
+				throw new XamplifyDataAccessException("Received 403 Forbidden calling updatePRMLead at URL: " + url);
+			} else {
+				throw new XamplifyDataAccessException(
+						"Unexpected status " + status.value() + " calling updatePRMLead at URL: " + url);
+			}
+
+		} catch (HttpClientErrorException ex) {
+			String body = ex.getResponseBodyAsString();
+			throw new XamplifyDataAccessException(
+					"Client error calling updatePRMLead. HTTP " + ex.getStatusCode().value() + ", body: " + body, ex);
+
+		} catch (RestClientResponseException ex) {
+			String body = ex.getResponseBodyAsString();
+			throw new XamplifyDataAccessException(
+					"Error calling updatePRMLead. HTTP " + ex.getRawStatusCode() + ", body: " + body, ex);
+
+		} catch (Exception ex) {
+			throw new XamplifyDataAccessException("Unexpected error calling updatePRMLead", ex);
+		}
+	}
 
 }

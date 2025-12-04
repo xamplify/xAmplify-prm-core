@@ -109,6 +109,8 @@ public interface DealService {
 
 	XtremandResponse saveDealPipelinesFromMcp(Integer userId);
 	
-	public void saveAndPushDealToxAmplify(DealDto dealDto);
+	void saveAndPushDealToxAmplify(DealDto dealDto);
+	
+	void updateAndPushDealToxAmplify(DealDto dealDto);
 
 }

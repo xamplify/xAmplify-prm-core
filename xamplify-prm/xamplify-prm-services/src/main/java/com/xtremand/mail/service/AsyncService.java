@@ -4900,5 +4900,13 @@ public class AsyncService {
 	public void saveAndPushDealToxAmplify(DealDto dealDto) {
 		dealService.saveAndPushDealToxAmplify(dealDto);
 	}
+	
+	public void updateAndPushLeadToxAmplify(LeadDto leadDto) {
+		leadService.updateAndPushLeadToxAmplify(leadDto);
+	}
+
+	public void updateAndPushDealToxAmplify(DealDto dealDto) {
+		dealService.updateAndPushDealToxAmplify(dealDto);
+	}
 
 }

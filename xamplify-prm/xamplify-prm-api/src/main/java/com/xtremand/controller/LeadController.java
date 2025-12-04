@@ -77,6 +77,7 @@ public class LeadController {
 			throw new XamplifyDataAccessException(e);
 		} finally {
 			if (response.getStatusCode() == 200) {
+				asyncComponent.updateAndPushLeadToxAmplify(leadDto);
 				asyncComponent.sendLeadAddedOrUpdatedEmailToPartner(leadDto, true);
 			}
 		}

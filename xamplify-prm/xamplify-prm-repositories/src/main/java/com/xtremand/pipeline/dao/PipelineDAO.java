@@ -8,8 +8,10 @@ import com.xtremand.integration.bom.Integration.IntegrationType;
 import com.xtremand.lead.bom.Pipeline;
 import com.xtremand.lead.bom.PipelineStage;
 import com.xtremand.lead.bom.PipelineType;
+import com.xtremand.lead.dto.PipelineDto;
 import com.xtremand.lead.dto.PipelineRequestDTO;
 import com.xtremand.lead.dto.PipelineResponseDTO;
+import com.xtremand.lead.dto.PipelineStageDto;
 import com.xtremand.lead.dto.PipelineStageResponseDTO;
 
 public interface PipelineDAO {
@@ -87,5 +89,9 @@ public interface PipelineDAO {
     public void deletePipelineStages(List<Pipeline> pipelinesToRemove);
     
     public void deletePipelines(List<Pipeline> pipelinesToRemove);
+    
+    PipelineDto fetchPipelineDetailsByPipelineId(Integer pipelineId);
+    
+    PipelineStageDto fetchPipelineStageDetailsByPipelineStageId(Integer pipelineStageId);
 
 }

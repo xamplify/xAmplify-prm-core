@@ -24,8 +24,10 @@ import com.xtremand.integration.bom.Integration.IntegrationType;
 import com.xtremand.lead.bom.Pipeline;
 import com.xtremand.lead.bom.PipelineStage;
 import com.xtremand.lead.bom.PipelineType;
+import com.xtremand.lead.dto.PipelineDto;
 import com.xtremand.lead.dto.PipelineRequestDTO;
 import com.xtremand.lead.dto.PipelineResponseDTO;
+import com.xtremand.lead.dto.PipelineStageDto;
 import com.xtremand.lead.dto.PipelineStageResponseDTO;
 import com.xtremand.util.PaginationUtil;
 import com.xtremand.util.XamplifyUtils;
@@ -498,26 +500,6 @@ public class HibernatePipelineDAO implements PipelineDAO {
 		pipelineUpdate.setParameterList(PIPELINE_IDS, pipelineIds);
 		pipelineUpdate.executeUpdate();
 
-//		Query createdForPipelineUpdate = session.createSQLQuery(
-//				"update xt_deal set created_for_pipeline_id = :targetPipelineId where created_for_pipeline_id in (:pipelineIds)");
-//		createdForPipelineUpdate.setParameter(TARGET_PIPELINE_ID, targetPipelineId);
-//		createdForPipelineUpdate.setParameterList(PIPELINE_IDS, pipelineIds);
-//		createdForPipelineUpdate.executeUpdate();
-//
-//		if (targetStageId != null) {
-//			Query stageUpdate = session.createSQLQuery(
-//					"update xt_deal set pipeline_stage_id = :targetStageId where pipeline_id in (:pipelineIds)");
-//			stageUpdate.setParameter(TARGET_STAGE_ID, targetStageId);
-//			stageUpdate.setParameterList(PIPELINE_IDS, pipelineIds);
-//			stageUpdate.executeUpdate();
-//
-//			Query createdForStageUpdate = session.createSQLQuery(
-//					"update xt_deal set created_for_pipeline_stage_id = :targetStageId where created_for_pipeline_id in (:pipelineIds)");
-//			createdForStageUpdate.setParameter(TARGET_STAGE_ID, targetStageId);
-//			createdForStageUpdate.setParameterList(PIPELINE_IDS, pipelineIds);
-//			createdForStageUpdate.executeUpdate();
-//
-//		}
 	}
 	
 	@Override
@@ -554,6 +536,24 @@ public class HibernatePipelineDAO implements PipelineDAO {
 		Query pipelineDelete = session.createSQLQuery("delete from xt_pipeline where id in (:pipelineIds)");
 		pipelineDelete.setParameterList(PIPELINE_IDS, pipelineIds);
 		pipelineDelete.executeUpdate();
+	}
+
+	@Override
+	public PipelineDto fetchPipelineDetailsByPipelineId(Integer pipelineId) {
+		HibernateSQLQueryResultRequestDTO hibernateSQLQueryResultRequestDTO = new HibernateSQLQueryResultRequestDTO();
+		String sqlQuery = "select name as \"name\", external_pipeline_id as \"externalPipelineId\" from xt_pipeline where id = :pipelineId";
+		hibernateSQLQueryResultRequestDTO.setQueryString(sqlQuery);
+		hibernateSQLQueryResultRequestDTO.getQueryParameterDTOs().add(new QueryParameterDTO("pipelineId", pipelineId));
+		return (PipelineDto) hibernateSQLQueryResultUtilDao.getDto(hibernateSQLQueryResultRequestDTO, PipelineDto.class);
+	}
+
+	@Override
+	public PipelineStageDto fetchPipelineStageDetailsByPipelineStageId(Integer pipelineStageId) {
+		HibernateSQLQueryResultRequestDTO hibernateSQLQueryResultRequestDTO = new HibernateSQLQueryResultRequestDTO();
+		String sqlQuery = "select stage_name as \"stageName\", external_pipeline_stage_id as \"externalPipelineStageId\" from xt_pipeline_stage where id = :pipelineStageId";
+		hibernateSQLQueryResultRequestDTO.setQueryString(sqlQuery);
+		hibernateSQLQueryResultRequestDTO.getQueryParameterDTOs().add(new QueryParameterDTO("pipelineStageId", pipelineStageId));
+		return (PipelineStageDto) hibernateSQLQueryResultUtilDao.getDto(hibernateSQLQueryResultRequestDTO, PipelineStageDto.class);
 	}
 
 }

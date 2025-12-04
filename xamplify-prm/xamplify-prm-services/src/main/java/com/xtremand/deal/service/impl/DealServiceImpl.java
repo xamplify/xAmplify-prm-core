@@ -2886,15 +2886,11 @@ public class DealServiceImpl implements DealService {
 		}
 
 		if (pipelineStage != null) {
-			dealDto.setCreatedForPipelineStageId(pipelineStage.getId());
-			dealDto.setCreatedForPipelineStage(pipelineStage.getStageName());
 			dealDto.setExternalPipelineStageId(pipelineStage.getExternalPipelineStageId());
 			dealDto.setPipelineStageName(pipelineStage.getStageName());
 
 			Pipeline pipeline = pipelineStage.getPipeline();
 			if (pipeline != null) {
-				dealDto.setCreatedForPipelineId(pipeline.getId());
-				dealDto.setCreatedForPipeline(pipeline.getName());
 				dealDto.setExternalPipelineId(pipeline.getExternalPipelineId());
 				dealDto.setPipelineName(pipeline.getName());
 			}
@@ -3046,6 +3042,88 @@ public class DealServiceImpl implements DealService {
 			return firstName;
 		}
 		return (firstName + " " + lastName).trim();
+	}
+	
+	@Override
+	public void updateAndPushDealToxAmplify(DealDto dealDto) {
+		if (dealDto != null && dealDto.getId() != null && dealDto.getId() > 0) {
+			try {
+				populateDealDtoForXamplifySync(dealDto);
+				updatePrmDeal(xAmplifyPat, dealDto);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
+
+	}
+
+	private void populateDealDtoForXamplifySync(DealDto dealDto) {
+		UserDTO userDTO = userDao.getSendorCompanyDetailsByUserId(dealDto.getUserId());
+		dealDto.setDealId(dealDto.getId());
+		if (userDTO != null) {
+			dealDto.setCreatedByCompanyName(userDTO.getCompanyName());
+			dealDto.setPartnerCompanyId(userDTO.getCompanyId());
+			dealDto.setCreatedByEmail(userDTO.getEmailId());
+			dealDto.setCreatedByName(userDTO.getFullName());
+		}
+
+		populatePipelineDetailsForXamplifySync(dealDto);
+		populateLeadAndContactDetailsForXamplifySync(dealDto);
+	}
+	
+	private Map<String, Object> updatePrmDeal(String patToken, DealDto dealDto) throws XamplifyDataAccessException {
+
+		if (!XamplifyUtils.isValidString(patToken)) {
+			throw new IllegalArgumentException("patToken is required");
+		}
+		if (dealDto == null) {
+			throw new IllegalArgumentException("dealDto is required");
+		}
+
+		if (!baseUrl.endsWith("/")) {
+			baseUrl = baseUrl + "/";
+		}
+		String url = baseUrl + "mcp/deals/updateDeal";
+
+		HttpHeaders headers = new HttpHeaders();
+		headers.set(HttpHeaders.AUTHORIZATION, BEARER + patToken.trim());
+		headers.setContentType(MediaType.APPLICATION_JSON);
+		headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
+
+		HttpEntity<DealDto> requestEntity = new HttpEntity<>(dealDto, headers);
+		RestTemplate restTemplate = new RestTemplate();
+
+		try {
+			ResponseEntity<Map<String, Object>> response = restTemplate.exchange(url, HttpMethod.POST, requestEntity,
+					new ParameterizedTypeReference<Map<String, Object>>() {
+					});
+
+			HttpStatus status = response.getStatusCode();
+
+			if (status.is2xxSuccessful()) {
+				return response.getBody();
+			} else if (status == HttpStatus.UNAUTHORIZED) {
+				throw new XamplifyDataAccessException("Received 401 Unauthorized calling updatePRMDeal at URL: " + url);
+			} else if (status == HttpStatus.FORBIDDEN) {
+				throw new XamplifyDataAccessException("Received 403 Forbidden calling updatePRMDeal at URL: " + url);
+			} else {
+				throw new XamplifyDataAccessException(
+						"Unexpected status " + status.value() + " calling updatePRMDeal at URL: " + url);
+			}
+
+		} catch (HttpClientErrorException ex) {
+			String body = ex.getResponseBodyAsString();
+			throw new XamplifyDataAccessException(
+					"Client error calling updatePRMDeal. HTTP " + ex.getStatusCode().value() + ", body: " + body, ex);
+
+		} catch (RestClientResponseException ex) {
+			String body = ex.getResponseBodyAsString();
+			throw new XamplifyDataAccessException(
+					"Error calling updatePRMDeal. HTTP " + ex.getRawStatusCode() + ", body: " + body, ex);
+
+		} catch (Exception ex) {
+			throw new XamplifyDataAccessException("Unexpected error calling updatePRMDeal", ex);
+		}
 	}
 
 }

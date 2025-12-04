@@ -123,8 +123,10 @@ public interface LeadService {
 
 	XtremandResponse saveLeadCustomFormFromMcp(Integer userId);
 	
-	public void saveAndPushLeadToxAmplify(LeadDto leadDto);
+	void saveAndPushLeadToxAmplify(LeadDto leadDto);
 
 	XtremandResponse saveLeadPipelinesFromMcp(Integer companyId);
+	
+	void updateAndPushLeadToxAmplify(LeadDto leadDto);
 
 }
