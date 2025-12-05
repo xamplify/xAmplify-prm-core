@@ -4908,5 +4908,9 @@ public class AsyncService {
 	public void updateAndPushDealToxAmplify(DealDto dealDto) {
 		dealService.updateAndPushDealToxAmplify(dealDto);
 	}
+	
+	public void updateDealStatusToxAmplify(DealDto dealDto) {
+		dealService.updateDealStatusToxAmplify(dealDto);
+	}
 
 }

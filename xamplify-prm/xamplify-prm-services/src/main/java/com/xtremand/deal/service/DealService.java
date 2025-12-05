@@ -112,5 +112,7 @@ public interface DealService {
 	void saveAndPushDealToxAmplify(DealDto dealDto);
 	
 	void updateAndPushDealToxAmplify(DealDto dealDto);
+	
+	void updateDealStatusToxAmplify(DealDto dealDto);
 
 }

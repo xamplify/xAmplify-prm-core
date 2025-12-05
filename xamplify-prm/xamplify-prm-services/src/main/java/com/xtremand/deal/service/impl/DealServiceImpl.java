@@ -54,6 +54,7 @@ import com.xtremand.deal.bom.DealStage;
 import com.xtremand.deal.dao.DealDAO;
 import com.xtremand.deal.dto.DealCountsResponseDTO;
 import com.xtremand.deal.dto.DealDto;
+import com.xtremand.deal.dto.DealStatusUpdateRequest;
 import com.xtremand.deal.dto.VendorSelfDealRequestDTO;
 import com.xtremand.deal.service.DealService;
 import com.xtremand.flexi.fields.dao.FlexiFieldDao;
@@ -3123,6 +3124,85 @@ public class DealServiceImpl implements DealService {
 
 		} catch (Exception ex) {
 			throw new XamplifyDataAccessException("Unexpected error calling updatePRMDeal", ex);
+		}
+	}
+	
+	@Override
+	public void updateDealStatusToxAmplify(DealDto dealDto) {
+		if (dealDto == null || !XamplifyUtils.isValidInteger(dealDto.getId())
+				|| !XamplifyUtils.isValidInteger(dealDto.getPipelineStageId())
+				|| !XamplifyUtils.isValidInteger(dealDto.getUserId()) || !XamplifyUtils.isValidString(xAmplifyPat)) {
+			return;
+		}
+
+		Deal deal = genericDAO.get(Deal.class, dealDto.getId());
+		PipelineStage pipelineStage = genericDAO.get(PipelineStage.class, dealDto.getPipelineStageId());
+		if (deal == null || pipelineStage == null) {
+			return;
+		}
+
+		DealStatusUpdateRequest statusUpdateRequest = new DealStatusUpdateRequest();
+		statusUpdateRequest.setDealId(deal.getId());
+		statusUpdateRequest.setPipelineStageName(pipelineStage.getStageName());
+
+		Integer updaterCompanyId = userDao.getCompanyIdByUserId(dealDto.getUserId());
+		User updater = genericDAO.get(User.class, dealDto.getUserId());
+		if (updater != null && XamplifyUtils.isValidInteger(updaterCompanyId)) {
+			String updaterFullName = buildFullName(updater.getFirstName(), updater.getLastName());
+			if (deal.getCreatedForCompany() != null
+					&& Objects.equals(updaterCompanyId, deal.getCreatedForCompany().getId())) {
+				statusUpdateRequest.setVendorUsername(updaterFullName);
+				statusUpdateRequest.setVendorEmailId(updater.getEmailId());
+			} else if (deal.getCreatedByCompany() != null
+					&& Objects.equals(updaterCompanyId, deal.getCreatedByCompany().getId())) {
+				statusUpdateRequest.setPartnerCompanyId(updaterCompanyId);
+				statusUpdateRequest.setPartnerUsername(updaterFullName);
+				statusUpdateRequest.setPartnerEmailId(updater.getEmailId());
+			}
+		}
+
+		pushDealStatusUpdateToXamplify(statusUpdateRequest);
+	}
+
+	private void pushDealStatusUpdateToXamplify(DealStatusUpdateRequest statusUpdateRequest)
+			throws XamplifyDataAccessException {
+		if (statusUpdateRequest == null || !XamplifyUtils.isValidInteger(statusUpdateRequest.getDealId())
+				|| !XamplifyUtils.isValidString(statusUpdateRequest.getPipelineStageName())) {
+			return;
+		}
+
+		if (!baseUrl.endsWith("/")) {
+			baseUrl = baseUrl + "/";
+		}
+		String url = baseUrl + "mcp/deals/status/update";
+
+		HttpHeaders headers = new HttpHeaders();
+		headers.set(HttpHeaders.AUTHORIZATION, BEARER + xAmplifyPat.trim());
+		headers.setContentType(MediaType.APPLICATION_JSON);
+		headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
+
+		RestTemplate restTemplate = new RestTemplate();
+		HttpEntity<DealStatusUpdateRequest> requestEntity = new HttpEntity<>(statusUpdateRequest, headers);
+
+		try {
+			ResponseEntity<Void> response = restTemplate.exchange(url, HttpMethod.POST, requestEntity, Void.class);
+			HttpStatus status = response.getStatusCode();
+
+			if (!status.is2xxSuccessful()) {
+				throw new XamplifyDataAccessException(
+						"Unexpected status " + status.value() + " calling updateDealStatus at URL: " + url);
+			}
+
+		} catch (HttpClientErrorException ex) {
+			String body = ex.getResponseBodyAsString();
+			throw new XamplifyDataAccessException(
+					"Client error calling updateDealStatus. HTTP " + ex.getStatusCode().value() + ", body: " + body,
+					ex);
+
+		} catch (RestClientResponseException ex) {
+			String body = ex.getResponseBodyAsString();
+			throw new XamplifyDataAccessException(
+					"Error calling updateDealStatus. HTTP " + ex.getRawStatusCode() + ", body: " + body, ex);
 		}
 	}
 

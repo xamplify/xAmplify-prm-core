@@ -583,5 +583,10 @@ public class AsyncComponent {
 	public void updateAndPushDealToxAmplify(DealDto dealDto) {
 		asyncService.updateAndPushDealToxAmplify(dealDto);
 	}
+	
+	@Async(value = "updateAndPushDealToxAmplify")
+    public void updateDealStatusToxAmplify(DealDto dealDto) {
+            asyncService.updateDealStatusToxAmplify(dealDto);
+    }
 
 }

@@ -105,6 +105,7 @@ public class DealController {
 			throw new XamplifyDataAccessException(e);
 		} finally {
 			if (response.getStatusCode() == 200) {
+				asyncComponent.updateDealStatusToxAmplify(dealDto);
 				asyncComponent.sendDealAddedOrUpdatedEmailToPartner(dealDto, true);
 			}
 		}
