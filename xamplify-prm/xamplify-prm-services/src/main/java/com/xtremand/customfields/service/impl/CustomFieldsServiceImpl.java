@@ -819,6 +819,9 @@ public class CustomFieldsServiceImpl implements CustomFieldsService {
 			case CLOSE_DATE:
 				fieldValue = deal.getCloseDate().toString();
 				break;
+			case NAME:
+				fieldValue = deal.getTitle();
+				break;
 			}
 		}
 		if (!StringUtils.isBlank(fieldValue)) {

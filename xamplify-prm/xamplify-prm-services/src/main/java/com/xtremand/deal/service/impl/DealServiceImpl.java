@@ -1,6 +1,13 @@
 package com.xtremand.deal.service.impl;
 
 import java.math.BigInteger;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -22,6 +29,8 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.lang.StringUtils;
 import org.json.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Lazy;
@@ -55,6 +64,7 @@ import com.xtremand.deal.dao.DealDAO;
 import com.xtremand.deal.dto.DealCountsResponseDTO;
 import com.xtremand.deal.dto.DealDto;
 import com.xtremand.deal.dto.DealStatusUpdateRequest;
+import com.xtremand.deal.dto.DealSyncDetailsDto;
 import com.xtremand.deal.dto.VendorSelfDealRequestDTO;
 import com.xtremand.deal.service.DealService;
 import com.xtremand.flexi.fields.dao.FlexiFieldDao;
@@ -82,6 +92,7 @@ import com.xtremand.lead.bom.Pipeline;
 import com.xtremand.lead.bom.PipelineStage;
 import com.xtremand.lead.bom.PipelineType;
 import com.xtremand.lead.dto.LeadDto;
+import com.xtremand.lead.dto.LeadSyncDetailsDto;
 import com.xtremand.lead.dto.PipelineDto;
 import com.xtremand.lead.dto.PipelineStageDto;
 import com.xtremand.lead.service.LeadService;
@@ -138,6 +149,8 @@ public class DealServiceImpl implements DealService {
 	private static final String USER_DETAILS_QUERY_STRING = USER_DETAILS_QUERY_PREFIX + DEAL_AND_USER_PROFILE
 			+ " where xup.user_id  = xl.created_by \r\n";
 	private static final String LABEL_NAME = "labelName";
+	
+	private static final Logger LOGGER = LoggerFactory.getLogger(DealServiceImpl.class);
 
 	@Autowired
 	private UserService userService;
@@ -3204,6 +3217,276 @@ public class DealServiceImpl implements DealService {
 			throw new XamplifyDataAccessException(
 					"Error calling updateDealStatus. HTTP " + ex.getRawStatusCode() + ", body: " + body, ex);
 		}
+	}
+	
+	@Override
+	public XtremandResponse syncDeals(Integer userId) {
+		XtremandResponse response = new XtremandResponse();
+		Integer createdForCompanyId = userDao.getCompanyIdByUserId(userId);
+		if (!XamplifyUtils.isValidInteger(createdForCompanyId) || !XamplifyUtils.isValidInteger(userId)) {
+			response.setStatusCode(400);
+			response.setMessage(INVALID_INPUT);
+			return response;
+		}
+
+		CompanyProfile companyProfile = userService.getCompanyProfileByUser(userId);
+		if (companyProfile == null || companyProfile.getId() == null
+				|| !companyProfile.getId().equals(createdForCompanyId)) {
+			response.setStatusCode(401);
+			response.setMessage(UNAUTHORIZED);
+			return response;
+		}
+
+		List<Deal> deals = dealDAO.findDealsByCreatedForCompanyId(createdForCompanyId);
+		if (deals == null || deals.isEmpty()) {
+			response.setStatusCode(200);
+			response.setMessage(SUCCESS);
+			response.setData(Collections.emptyMap());
+			return response;
+		}
+
+		Integration activeCRMIntegration = integrationDao.getActiveCRMIntegration(createdForCompanyId);
+		IntegrationType activeIntegrationType = activeCRMIntegration != null ? activeCRMIntegration.getType() : null;
+		Integration otherActiveCRMIntegration = null;
+
+		int synced = 0;
+		int failed = 0;
+		for (Deal deal : deals) {
+			try {
+				String openSourceDealId = deal.getId().toString();
+				if (!XamplifyUtils.isValidString(openSourceDealId)) {
+					failed++;
+					continue;
+				}
+
+				DealSyncDetailsDto dealDetails = fetchOpenSourceDeal(openSourceDealId);
+				applyDealUpdates(deal, dealDetails);
+				updateDealPipeline(deal, dealDetails, createdForCompanyId, activeIntegrationType);
+				updateSfCustomFieldsData(deal, dealDetails, createdForCompanyId, activeIntegrationType,
+						otherActiveCRMIntegration);
+				genericDAO.update(deal);
+				synced++;
+			} catch (Exception ex) {
+				failed++;
+				LOGGER.error("Error syncing deal {} for company {}", deal.getId(), createdForCompanyId, ex);
+			}
+		}
+
+		Map<String, Integer> syncStatus = new HashMap<>();
+		syncStatus.put("synced", synced);
+		syncStatus.put("failed", failed);
+		response.setStatusCode(200);
+		response.setMessage(SUCCESS);
+		response.setData(syncStatus);
+		return response;
+	}
+	
+	private DealSyncDetailsDto fetchOpenSourceDeal(String openSourceDealId) {
+		if (!XamplifyUtils.isValidString(openSourceDealId)) {
+			throw new IllegalArgumentException("openSourceDealId is required");
+		}
+
+		String url = baseUrl + "mcp/deals/open-source/" + openSourceDealId.trim();
+		HttpHeaders headers = new HttpHeaders();
+		headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
+		if (StringUtils.isNotBlank(xAmplifyPat)) {
+			headers.set(HttpHeaders.AUTHORIZATION, BEARER + xAmplifyPat.trim());
+		}
+
+		HttpEntity<Void> entity = new HttpEntity<>(headers);
+		RestTemplate restTemplate = new RestTemplate();
+
+		ResponseEntity<Map<String, DealSyncDetailsDto>> response = restTemplate.exchange(url, HttpMethod.GET, entity,
+				new ParameterizedTypeReference<Map<String, DealSyncDetailsDto>>() {
+				});
+		HttpStatus status = response.getStatusCode();
+
+		if (status.is2xxSuccessful() && response.getBody() != null) {
+//			return response.getBody();
+			if (response.getBody().containsKey("details")) {
+				return (DealSyncDetailsDto) response.getBody().get("details");
+			}
+		}
+
+		String message = "Failed to fetch deal details from open source for id: " + openSourceDealId;
+		throw new XamplifyDataAccessException(message);
+	}
+
+	private void applyDealUpdates(Deal deal, DealSyncDetailsDto dealDetails) {
+		if (deal == null || dealDetails == null) {
+			return;
+		}
+
+		if (dealDetails.getTitle() != null) {
+			deal.setTitle(dealDetails.getTitle());
+		}
+		if (dealDetails.getAmount() != null) {
+			deal.setAmount(dealDetails.getAmount());
+		}
+		Date syncedCloseDate = parseCloseDate(dealDetails.getCloseDate());
+		if (syncedCloseDate != null) {
+			deal.setCloseDate(syncedCloseDate);
+		}
+//		if (dealDetails.getOpenSourceDealId() != null) {
+//			deal.setReferenceId(String.valueOf(dealDetails.getOpenSourceDealId()));
+//		} else 
+		if (StringUtils.isNotBlank(dealDetails.getReferenceId())) {
+			deal.setReferenceId(dealDetails.getReferenceId());
+		}
+	}
+
+	private Date parseCloseDate(String closeDate) {
+		if (StringUtils.isBlank(closeDate)) {
+			return null;
+		}
+
+		String trimmedCloseDate = closeDate.trim();
+		
+		if (trimmedCloseDate.matches("^-?\\d+$")) { // only digits, maybe leading -
+			try {
+				long epochValue = Long.parseLong(trimmedCloseDate);
+
+				// Heuristic: 10 digits -> seconds, 13 digits -> millis
+				if (trimmedCloseDate.length() <= 10) {
+					return Date.from(Instant.ofEpochSecond(epochValue));
+				} else {
+					return Date.from(Instant.ofEpochMilli(epochValue));
+				}
+			} catch (NumberFormatException ignored) {
+				// fall through to other parsers
+			}
+		}
+		
+		try {
+			OffsetDateTime offsetDateTime = OffsetDateTime.parse(trimmedCloseDate, DateTimeFormatter.ISO_DATE_TIME);
+			return Date.from(offsetDateTime.toInstant());
+		} catch (DateTimeParseException ignored) {
+		}
+
+		try {
+			LocalDateTime localDateTime = LocalDateTime.parse(trimmedCloseDate, DateTimeFormatter.ISO_DATE_TIME);
+			return Date.from(localDateTime.atZone(ZoneId.systemDefault()).toInstant());
+		} catch (DateTimeParseException ignored) {
+		}
+
+		try {
+			LocalDate localDate = LocalDate.parse(trimmedCloseDate, DateTimeFormatter.ISO_DATE);
+			return Date.from(localDate.atStartOfDay(ZoneId.systemDefault()).toInstant());
+		} catch (DateTimeParseException ignored) {
+		}
+
+		return null;
+	}
+
+	private void updateDealPipeline(Deal deal, DealSyncDetailsDto dealDetails, Integer companyId,
+			IntegrationType activeIntegrationType) {
+		if (deal == null || dealDetails == null) {
+			return;
+		}
+
+		Pipeline pipeline = null;
+		if (XamplifyUtils.isValidString(dealDetails.getExternalPipelineId()) && activeIntegrationType != null) {
+			pipeline = pipelineDAO.getDealPipelineByExternalPipelineId(companyId, dealDetails.getExternalPipelineId(),
+					activeIntegrationType);
+		}
+
+		if (pipeline == null && XamplifyUtils.isValidString(dealDetails.getPipelineName())) {
+			pipeline = pipelineDAO.getPipeLineByName(companyId, dealDetails.getPipelineName(), PipelineType.DEAL);
+		}
+
+		if (pipeline != null) {
+			deal.setPipeline(pipeline);
+			deal.setCreatedForPipeline(pipeline);
+			PipelineStage stage = pipelineDAO.getPipelineStageByExternalPipelineStageId(companyId, pipeline.getId(),
+					dealDetails.getExternalPipelineStageId(), dealDetails.getPipelineStageName());
+			if (stage == null) {
+				stage = pipelineDAO.getDefaultStage(pipeline.getId());
+			}
+			if (stage == null) {
+				stage = pipelineDAO.findFallbackStage(pipeline.getId());
+			}
+			if (stage != null) {
+				deal.setCurrentStage(stage);
+				deal.setCreatedForPipelineStage(stage);
+			}
+		}
+	}
+
+	private void updateSfCustomFieldsData(Deal deal, DealSyncDetailsDto dealDetails, Integer activeCRMCompanyId,
+			IntegrationType activeCRMIntegrationType, Integration otherActiveCRMIntegration) {
+		if (activeCRMCompanyId != null && activeCRMCompanyId > 0 && activeCRMIntegrationType != null) {
+			List<FormLabel> activeCRMCFLabels = utilService.getDealCustomFormLabelsByIntegrationType(activeCRMCompanyId,
+					activeCRMIntegrationType);
+
+			List<FormLabel> otherActiveCRMCFLabels = new ArrayList<>();
+			if (otherActiveCRMIntegration != null) {
+				otherActiveCRMCFLabels = utilService.getDealCustomFormLabelsByIntegrationType(
+						otherActiveCRMIntegration.getCompany().getId(), otherActiveCRMIntegration.getType());
+			}
+
+			Map<String, String> customFieldValues = buildCustomFieldValues(dealDetails);
+
+			for (FormLabel formLabel : activeCRMCFLabels) {
+				if (formLabel != null) {
+					saveOrUpdateSfCustomFieldsData(deal, customFieldValues, formLabel, null);
+					FormLabel matchingFormLabel = utilService.getMatchedObject(formLabel, otherActiveCRMCFLabels);
+					if (matchingFormLabel != null) {
+						saveOrUpdateSfCustomFieldsData(deal, customFieldValues, matchingFormLabel, formLabel);
+					}
+				}
+			}
+		}
+	}
+
+	private Map<String, String> buildCustomFieldValues(DealSyncDetailsDto dealDetails) {
+		Map<String, String> customFieldValues = new HashMap<>();
+		if (dealDetails != null && dealDetails.getSfCustomFieldsData() != null) {
+			for (SfCustomFieldsDataDTO dataDTO : dealDetails.getSfCustomFieldsData()) {
+				if (dataDTO != null && StringUtils.isNotBlank(dataDTO.getSfCfLabelId())) {
+					String value = dataDTO.getValue();
+					if (value == null && StringUtils.isNotBlank(dataDTO.getSelectedChoiceValue())) {
+						value = dataDTO.getSelectedChoiceValue();
+					}
+					if (value == null && StringUtils.isNotBlank(dataDTO.getDateTimeIsoValue())) {
+						value = dataDTO.getDateTimeIsoValue();
+					}
+					customFieldValues.put(dataDTO.getSfCfLabelId(), value);
+				}
+			}
+		}
+		return customFieldValues;
+	}
+
+	private void saveOrUpdateSfCustomFieldsData(Deal deal, Map<String, String> customFieldValues, FormLabel formLabel,
+			FormLabel formLabelInOtherForm) {
+		SfCustomFieldsData sfCustomFieldsData = sfCustomFormDataDAO.getSfCustomFieldDataByDealIdAndLabelId(deal,
+				formLabel);
+		String value = null;
+		boolean saveOrUpdate = true;
+		if (formLabelInOtherForm != null) {
+			value = customFieldValues.get(formLabelInOtherForm.getLabelId());
+			Map<String, Object> customFieldsDataMap = utilService.getSfCustomFieldsDataValue(value, formLabel,
+					formLabelInOtherForm);
+			value = (String) customFieldsDataMap.get("value");
+			saveOrUpdate = (boolean) customFieldsDataMap.get("saveOrUpdate");
+		} else {
+			value = customFieldValues.get(formLabel.getLabelId());
+		}
+
+		if (saveOrUpdate) {
+			if (sfCustomFieldsData != null) {
+				sfCustomFieldsData.setFormLabel(formLabel);
+				sfCustomFieldsData.setValue(value);
+				sfCustomFormDataDAO.updateSfCfData(sfCustomFieldsData);
+			} else {
+				sfCustomFieldsData = new SfCustomFieldsData();
+				sfCustomFieldsData.setDeal(deal);
+				sfCustomFieldsData.setFormLabel(formLabel);
+				sfCustomFieldsData.setValue(value);
+				sfCustomFormDataDAO.saveSfCfData(sfCustomFieldsData);
+			}
+		}
+
 	}
 
 }

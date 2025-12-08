@@ -128,5 +128,7 @@ public interface LeadService {
 	XtremandResponse saveLeadPipelinesFromMcp(Integer companyId);
 	
 	void updateAndPushLeadToxAmplify(LeadDto leadDto);
+	
+	XtremandResponse syncLeads(Integer userId);
 
 }

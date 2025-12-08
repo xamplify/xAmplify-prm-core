@@ -114,5 +114,7 @@ public interface DealService {
 	void updateAndPushDealToxAmplify(DealDto dealDto);
 	
 	void updateDealStatusToxAmplify(DealDto dealDto);
+	
+	XtremandResponse syncDeals(Integer userId);
 
 }

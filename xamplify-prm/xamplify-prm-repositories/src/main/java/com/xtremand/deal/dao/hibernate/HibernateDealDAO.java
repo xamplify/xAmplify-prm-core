@@ -1115,5 +1115,15 @@ public class HibernateDealDAO implements DealDAO {
 		}
 
 	}
+	
+	@SuppressWarnings("unchecked")
+	@Override
+	public List<Deal> findDealsByCreatedForCompanyId(Integer createdForCompanyId) {
+		Session session = sessionFactory.getCurrentSession();
+		Criteria criteria = session.createCriteria(Deal.class);
+		criteria.add(Restrictions.eq("createdForCompany.id", createdForCompanyId));
+		criteria.addOrder(Order.desc("id"));
+		return criteria.list();
+	}
 
 }

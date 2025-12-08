@@ -310,6 +310,7 @@ public class LeadController {
 		return response;
 	}
 	
+	@SuppressWarnings("rawtypes")
 	@GetMapping(value = "crm/active/{opportunityType}/custom/form/{companyId}/{opportunityId}/{loggedInUserId}")
 	public ResponseEntity getActiveCRMCustomForm(@PathVariable Integer companyId, @PathVariable Integer opportunityId,
 			@PathVariable Integer loggedInUserId,
@@ -320,14 +321,21 @@ public class LeadController {
 		return response;
 	}
 	
+	@SuppressWarnings("rawtypes")
 	@GetMapping(value = "/sync/custom-form/{userId}")
 	public ResponseEntity syncCustomForm(@PathVariable Integer userId) {
 		return ResponseEntity.ok(leadService.saveLeadCustomFormFromMcp(userId));
 	}
 	
+	@SuppressWarnings("rawtypes")
 	@GetMapping(value = "/sync/pipeline/{userId}")
 	public ResponseEntity saveLeadPipelinesFromMcp(@PathVariable Integer userId) {
 		return ResponseEntity.ok(leadService.saveLeadPipelinesFromMcp(userId));
+	}
+	
+	@GetMapping("/sync/{userId}")
+	public ResponseEntity<XtremandResponse> syncLeads(@PathVariable Integer userId) {
+		return ResponseEntity.ok(leadService.syncLeads(userId));
 	}
 
 }

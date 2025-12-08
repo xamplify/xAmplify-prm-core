@@ -1378,5 +1378,14 @@ public class HibernateLeadDAO implements LeadDAO {
 			org.hibernate.Criteria criteria = session.createCriteria(ModuleAccess.class);
 			return (ModuleAccess) criteria.add(Restrictions.eq("companyProfile.id", companyId)).uniqueResult();
 	}
+	
+	@SuppressWarnings("unchecked")
+	@Override
+	public List<Lead> findLeadsByCreatedForCompanyId(Integer createdForCompanyId) {
+		Session session = sessionFactory.getCurrentSession();
+		Criteria criteria = session.createCriteria(Lead.class);
+		criteria.add(Restrictions.eq("createdForCompany.id", createdForCompanyId));
+		return criteria.list();
+	}
 
 }

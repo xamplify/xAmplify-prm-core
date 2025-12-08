@@ -3629,13 +3629,17 @@ public class UtilService {
 
 	public List<FormLabel> getLeadCustomFormLabelsByIntegrationType(Integer companyId,
 			IntegrationType integrationType) {
-		switch (integrationType) {
-		default:
-			break;
+		if (companyId == null || companyId <= 0 || integrationType == null) {
+			return Collections.emptyList();
 		}
 
-		List<FormLabel> cfLabels = new ArrayList<>();
-		return cfLabels;
+		FormTypeEnum formType = FormTypeEnum.XAMPLIFY_LEAD_CUSTOM_FORM;
+		if (IntegrationType.CUSTOM_CRM.equals(integrationType)) {
+			formType = FormTypeEnum.CRM_LEAD_CUSTOM_FORM;
+		}
+
+		List<FormLabel> cfLabels = getCustomFormLabelsByFormType(companyId, formType);
+		return cfLabels != null ? cfLabels : Collections.emptyList();
 	}
 
 	public Map<String, Object> getSfCustomFieldsDataValue(final String value, FormLabel formLabel,
@@ -5239,6 +5243,21 @@ public class UtilService {
 		} else {
 			return false;
 		}
+	}
+	
+	public List<FormLabel> getDealCustomFormLabelsByIntegrationType(Integer companyId,
+			IntegrationType integrationType) {
+		if (companyId == null || companyId <= 0 || integrationType == null) {
+			return Collections.emptyList();
+		}
+
+		FormTypeEnum formType = FormTypeEnum.XAMPLIFY_DEAL_CUSTOM_FORM;
+		if (IntegrationType.CUSTOM_CRM.equals(integrationType)) {
+			formType = FormTypeEnum.CRM_DEAL_CUSTOM_FORM;
+		}
+
+		List<FormLabel> cfLabels = getCustomFormLabelsByFormType(companyId, formType);
+		return cfLabels != null ? cfLabels : Collections.emptyList();
 	}
 
 }

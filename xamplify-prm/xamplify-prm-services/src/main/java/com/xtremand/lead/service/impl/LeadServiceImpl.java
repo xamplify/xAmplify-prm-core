@@ -15,6 +15,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -25,6 +26,8 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.commons.lang.StringUtils;
 import org.hibernate.HibernateException;
 import org.json.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Lazy;
@@ -87,6 +90,7 @@ import com.xtremand.lead.dao.LeadDAO;
 import com.xtremand.lead.dto.LeadCountsResponseDTO;
 import com.xtremand.lead.dto.LeadCustomFieldDto;
 import com.xtremand.lead.dto.LeadDto;
+import com.xtremand.lead.dto.LeadSyncDetailsDto;
 import com.xtremand.lead.dto.PipelineDto;
 import com.xtremand.lead.dto.PipelineStageDto;
 import com.xtremand.lead.service.LeadService;
@@ -153,6 +157,7 @@ public class LeadServiceImpl implements LeadService {
 			+ " where xup.user_id  = xl.created_by \r\n";
 
 	private static final String CREATED_BY_COMPANY_ID = XamplifyConstants.CREATED_BY_COMPANY_ID;
+	private static final Logger LOGGER = LoggerFactory.getLogger(LeadServiceImpl.class);
 
 	@Value("${server_path}")
 	String serverPath;
@@ -2140,7 +2145,7 @@ public class LeadServiceImpl implements LeadService {
 		return fieldHeaderMapping;
 	}
 
-	public void updateSfCustomFieldsData(Lead lead, JSONObject leadJson, Integer activeCRMCompanyId,
+	public void updateSfCustomFieldsData(Lead lead, LeadSyncDetailsDto leadDetails, Integer activeCRMCompanyId,
 			IntegrationType activeCRMIntegrationType, Integration otherActiveCRMIntegration) {
 		if (activeCRMCompanyId != null && activeCRMCompanyId > 0 && activeCRMIntegrationType != null) {
 			List<FormLabel> activeCRMCFLabels = utilService.getLeadCustomFormLabelsByIntegrationType(activeCRMCompanyId,
@@ -2152,12 +2157,14 @@ public class LeadServiceImpl implements LeadService {
 						otherActiveCRMIntegration.getCompany().getId(), otherActiveCRMIntegration.getType());
 			}
 
+			Map<String, String> customFieldValues = buildCustomFieldValues(leadDetails);
+
 			for (FormLabel formLabel : activeCRMCFLabels) {
 				if (formLabel != null) {
-					saveOrUpdateSfCustomFieldsData(lead, leadJson, formLabel, null);
+					saveOrUpdateSfCustomFieldsData(lead, customFieldValues, formLabel, null);
 					FormLabel matchingFormLabel = utilService.getMatchedObject(formLabel, otherActiveCRMCFLabels);
 					if (matchingFormLabel != null) {
-						saveOrUpdateSfCustomFieldsData(lead, leadJson, matchingFormLabel, formLabel);
+						saveOrUpdateSfCustomFieldsData(lead, customFieldValues, matchingFormLabel, formLabel);
 					}
 				}
 			}
@@ -3451,6 +3458,238 @@ public class LeadServiceImpl implements LeadService {
 
 		} catch (Exception ex) {
 			throw new XamplifyDataAccessException("Unexpected error calling updatePRMLead", ex);
+		}
+	}
+	
+	@Override
+	public XtremandResponse syncLeads(Integer userId) {
+		XtremandResponse response = new XtremandResponse();
+		Integer createdForCompanyId = userDao.getCompanyIdByUserId(userId);
+		if (!XamplifyUtils.isValidInteger(createdForCompanyId) || !XamplifyUtils.isValidInteger(userId)) {
+			response.setStatusCode(400);
+			response.setMessage(INVALID_INPUT);
+			return response;
+		}
+
+		CompanyProfile companyProfile = userService.getCompanyProfileByUser(userId);
+		if (companyProfile == null || companyProfile.getId() == null
+				|| !companyProfile.getId().equals(createdForCompanyId)) {
+			response.setStatusCode(401);
+			response.setMessage(UNAUTHORIZED);
+			return response;
+		}
+
+		List<Lead> leads = leadDAO.findLeadsByCreatedForCompanyId(createdForCompanyId);
+		if (leads == null || leads.isEmpty()) {
+			response.setStatusCode(200);
+			response.setMessage(SUCCESS);
+			response.setData(Collections.emptyMap());
+			return response;
+		}
+
+		Integration activeCRMIntegration = integrationDao.getActiveCRMIntegration(createdForCompanyId);
+		IntegrationType activeIntegrationType = activeCRMIntegration != null ? activeCRMIntegration.getType() : null;
+		Integration otherActiveCRMIntegration = null;
+
+		int synced = 0;
+		int failed = 0;
+		for (Lead lead : leads) {
+			try {
+				String openSourceLeadId = lead.getId().toString();
+				if (!XamplifyUtils.isValidString(openSourceLeadId)) {
+					failed++;
+					continue;
+				}
+
+				LeadSyncDetailsDto leadDetails = fetchOpenSourceLead(openSourceLeadId);
+				applyLeadUpdates(lead, leadDetails);
+				updateLeadPipeline(lead, leadDetails, createdForCompanyId, activeIntegrationType);
+				updateSfCustomFieldsData(lead, leadDetails, createdForCompanyId, activeIntegrationType,
+						otherActiveCRMIntegration);
+				genericDAO.update(lead);
+				synced++;
+			} catch (Exception ex) {
+				failed++;
+				LOGGER.error("Error syncing lead {} for company {}", lead.getId(), createdForCompanyId, ex);
+			}
+		}
+
+		Map<String, Integer> syncStatus = new HashMap<>();
+		syncStatus.put("synced", synced);
+		syncStatus.put("failed", failed);
+		response.setStatusCode(200);
+		response.setMessage(SUCCESS);
+		response.setData(syncStatus);
+		return response;
+	}
+	
+	private LeadSyncDetailsDto fetchOpenSourceLead(String openSourceLeadId) {
+		if (!XamplifyUtils.isValidString(openSourceLeadId)) {
+			throw new IllegalArgumentException("openSourceLeadId is required");
+		}
+
+		String url = baseUrl + "mcp/leads/open-source/" + openSourceLeadId.trim();
+		HttpHeaders headers = new HttpHeaders();
+		headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
+		if (StringUtils.isNotBlank(xAmplifyPat)) {
+			headers.set(HttpHeaders.AUTHORIZATION, BEARER + xAmplifyPat.trim());
+		}
+
+		HttpEntity<Void> entity = new HttpEntity<>(headers);
+		RestTemplate restTemplate = new RestTemplate();
+
+		ResponseEntity<Map<String, LeadSyncDetailsDto>> response = restTemplate.exchange(url, HttpMethod.GET, entity,
+				new ParameterizedTypeReference<Map<String, LeadSyncDetailsDto>>() {
+				});
+		HttpStatus status = response.getStatusCode();
+
+		if (status.is2xxSuccessful() && response.getBody() != null) {
+			if (response.getBody().containsKey("details")) {
+				return response.getBody().get("details");
+			}
+		}
+
+		String message = "Failed to fetch lead details from open source for id: " + openSourceLeadId;
+		throw new XamplifyDataAccessException(message);
+	}
+	
+	private void applyLeadUpdates(Lead lead, LeadSyncDetailsDto leadDetails) {
+		if (leadDetails == null || lead == null) {
+			return;
+		}
+
+		setIfPresent(leadDetails.getFirstName(), lead::setFirstName);
+		setIfPresent(leadDetails.getLastName(), lead::setLastName);
+		setIfPresent(leadDetails.getEmail(), lead::setEmail);
+		setIfPresent(leadDetails.getPhone(), lead::setPhone);
+		setIfPresent(leadDetails.getCompany(), lead::setCompany);
+		setIfPresent(leadDetails.getWebsite(), lead::setWebsite);
+		setIfPresent(leadDetails.getTitle(), lead::setTitle);
+		setIfPresent(leadDetails.getIndustry(), lead::setIndustry);
+		setIfPresent(leadDetails.getStreet(), lead::setStreet);
+		setIfPresent(leadDetails.getCity(), lead::setCity);
+		setIfPresent(leadDetails.getState(), lead::setState);
+		setIfPresent(leadDetails.getRegion(), lead::setRegion);
+		setIfPresent(leadDetails.getCountry(), lead::setCountry);
+		setIfPresent(leadDetails.getPostalCode(), lead::setPostalCode);
+		if (StringUtils.isNotBlank(leadDetails.getReferenceId())) {
+			lead.setReferenceId(leadDetails.getReferenceId());
+		}
+	}
+
+	private void setIfPresent(String value, Consumer<String> consumer) {
+		if (value != null) {
+			consumer.accept(value);
+		}
+	}
+
+	private void updateLeadPipeline(Lead lead, LeadSyncDetailsDto leadDetails, Integer companyId,
+			IntegrationType activeIntegrationType) {
+		if (lead == null || leadDetails == null) {
+			return;
+		}
+
+		Pipeline pipeline = null;
+		if (XamplifyUtils.isValidString(leadDetails.getExternalPipelineId()) && activeIntegrationType != null) {
+			pipeline = pipelineDAO.getLeadPipelineByExternalPipelineId(companyId, leadDetails.getExternalPipelineId(),
+					activeIntegrationType);
+		}
+
+		if (pipeline == null && XamplifyUtils.isValidString(leadDetails.getPipelineName())) {
+			pipeline = pipelineDAO.getPipeLineByName(companyId, leadDetails.getPipelineName(), PipelineType.LEAD);
+		}
+
+		if (pipeline != null) {
+			lead.setPipeline(pipeline);
+			lead.setCreatedForPipeline(pipeline);
+			PipelineStage stage = pipelineDAO.getPipelineStageByExternalPipelineStageId(companyId, pipeline.getId(),
+					leadDetails.getExternalPipelineStageId(), leadDetails.getPipelineStageName());
+			if (stage == null) {
+				stage = pipelineDAO.getDefaultStage(pipeline.getId());
+			}
+			if (stage == null) {
+				stage = pipelineDAO.findFallbackStage(pipeline.getId());
+			}
+			if (stage != null) {
+				lead.setCurrentStage(stage);
+				lead.setCreatedForPipelineStage(stage);
+			}
+		}
+	}
+	
+	private Map<String, String> buildCustomFieldValues(LeadSyncDetailsDto leadDetails) {
+		Map<String, String> customFieldValues = new HashMap<>();
+		if (leadDetails != null && leadDetails.getSfCustomFieldsData() != null) {
+			for (SfCustomFieldsDataDTO dataDTO : leadDetails.getSfCustomFieldsData()) {
+				if (dataDTO != null && StringUtils.isNotBlank(dataDTO.getSfCfLabelId())) {
+					String value = dataDTO.getValue();
+					if (value == null && StringUtils.isNotBlank(dataDTO.getSelectedChoiceValue())) {
+						value = dataDTO.getSelectedChoiceValue();
+					}
+					if (value == null && StringUtils.isNotBlank(dataDTO.getDateTimeIsoValue())) {
+						value = dataDTO.getDateTimeIsoValue();
+					}
+					customFieldValues.put(dataDTO.getSfCfLabelId(), value);
+				}
+			}
+		}
+		return customFieldValues;
+	}
+	
+	private void saveOrUpdateSfCustomFieldsData(Lead lead, Map<String, String> customFieldValues, FormLabel formLabel,
+			FormLabel formLabelInOtherForm) {
+		SfCustomFieldsData sfCustomFieldsData = sfCustomFormDataDAO.getSfCustomFieldDataByLeadIdAndLabelId(lead,
+				formLabel);
+		String value = null;
+		boolean saveOrUpdate = true;
+		if (formLabelInOtherForm != null) {
+			value = customFieldValues.get(formLabelInOtherForm.getLabelId());
+			Map<String, Object> customFieldsDataMap = utilService.getSfCustomFieldsDataValue(value, formLabel,
+					formLabelInOtherForm);
+			value = (String) customFieldsDataMap.get("value");
+			saveOrUpdate = (boolean) customFieldsDataMap.get("saveOrUpdate");
+		} else {
+			value = customFieldValues.get(formLabel.getLabelId());
+		}
+
+		if (saveOrUpdate) {
+			if (sfCustomFieldsData != null) {
+				sfCustomFieldsData.setFormLabel(formLabel);
+				sfCustomFieldsData.setValue(value);
+				sfCustomFormDataDAO.updateSfCfData(sfCustomFieldsData);
+			} else {
+				sfCustomFieldsData = new SfCustomFieldsData();
+				sfCustomFieldsData.setLead(lead);
+				sfCustomFieldsData.setFormLabel(formLabel);
+				sfCustomFieldsData.setValue(value);
+				sfCustomFormDataDAO.saveSfCfData(sfCustomFieldsData);
+			}
+		}
+
+	}
+
+	@Override
+	public void updateSfCustomFieldsData(Lead lead, JSONObject leadJson, Integer activeCRMCompanyId,
+			IntegrationType activeCRMIntegrationType, Integration otherActiveCRMIntegration) {
+		if (activeCRMCompanyId != null && activeCRMCompanyId > 0 && activeCRMIntegrationType != null) {
+			List<FormLabel> activeCRMCFLabels = utilService.getLeadCustomFormLabelsByIntegrationType(activeCRMCompanyId,
+					activeCRMIntegrationType);
+
+			List<FormLabel> otherActiveCRMCFLabels = new ArrayList<>();
+			if (otherActiveCRMIntegration != null) {
+				otherActiveCRMCFLabels = utilService.getLeadCustomFormLabelsByIntegrationType(
+						otherActiveCRMIntegration.getCompany().getId(), otherActiveCRMIntegration.getType());
+			}
+
+			for (FormLabel formLabel : activeCRMCFLabels) {
+				if (formLabel != null) {
+					saveOrUpdateSfCustomFieldsData(lead, leadJson, formLabel, null);
+					FormLabel matchingFormLabel = utilService.getMatchedObject(formLabel, otherActiveCRMCFLabels);
+					if (matchingFormLabel != null) {
+						saveOrUpdateSfCustomFieldsData(lead, leadJson, matchingFormLabel, formLabel);
+					}
+				}
+			}
 		}
 	}
 

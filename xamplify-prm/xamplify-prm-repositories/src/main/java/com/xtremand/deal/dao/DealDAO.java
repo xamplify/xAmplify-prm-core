@@ -84,5 +84,7 @@ public interface DealDAO {
 			Integer userListId, Integer queryLimit);
 
 	void getUserUserDetailsForDeal(DealDto dealDto, Integer partnerId, Integer vendorId);
+	
+	List<Deal> findDealsByCreatedForCompanyId(Integer createdForCompanyId);
 
 }

@@ -262,5 +262,10 @@ public class DealController {
     public ResponseEntity<XtremandResponse> saveDealPipelinesFromMcp(@PathVariable Integer userId) {
             return ResponseEntity.ok(dealService.saveDealPipelinesFromMcp(userId));
     }
+    
+	@GetMapping("/sync/{userId}")
+	public ResponseEntity<XtremandResponse> syncDeals(@PathVariable Integer userId) {
+		return ResponseEntity.ok(dealService.syncDeals(userId));
+	}
 
 }
