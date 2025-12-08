@@ -2785,7 +2785,7 @@ public class LeadServiceImpl implements LeadService {
 		if (!baseUrl.endsWith("/")) {
 			baseUrl = baseUrl + "/";
 		}
-	    String url = baseUrl + "mcp/leads";
+	    String url = baseUrl + "mcp/leads/create";
 
 	    HttpHeaders headers = new HttpHeaders();
 	    headers.set(HttpHeaders.AUTHORIZATION, BEARER + patToken.trim());

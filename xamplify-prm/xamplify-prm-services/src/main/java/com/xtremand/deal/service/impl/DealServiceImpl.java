@@ -2851,7 +2851,7 @@ public class DealServiceImpl implements DealService {
 		if (!baseUrl.endsWith("/")) {
 			baseUrl = baseUrl + "/";
 		}
-		String url = baseUrl + "mcp/deals/createDeal";
+		String url = baseUrl + "mcp/deals/create";
 
 		HttpHeaders headers = new HttpHeaders();
 		headers.set(HttpHeaders.AUTHORIZATION, BEARER + patToken.trim());
