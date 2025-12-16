@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -57,6 +58,8 @@ import com.xtremand.common.bom.Criteria;
 import com.xtremand.common.bom.Criteria.OPERATION_NAME;
 import com.xtremand.common.bom.FindLevel;
 import com.xtremand.common.bom.Pagination;
+import com.xtremand.custom.field.dto.FieldLabelType;
+import com.xtremand.customfields.dao.CustomFieldsDao;
 import com.xtremand.dao.util.GenericDAO;
 import com.xtremand.deal.bom.Deal;
 import com.xtremand.deal.bom.DealStage;
@@ -101,6 +104,8 @@ import com.xtremand.mail.service.MailService;
 import com.xtremand.partnership.dao.PartnershipDAO;
 import com.xtremand.pipeline.dao.PipelineDAO;
 import com.xtremand.salesforce.bom.SfCustomFieldsData;
+import com.xtremand.salesforce.dto.OpportunityFormFieldsDTO;
+import com.xtremand.salesforce.dto.PicklistValues;
 import com.xtremand.salesforce.dto.SfCustomFieldsDataDTO;
 import com.xtremand.sf.cf.data.dao.SfCustomFormDataDAO;
 import com.xtremand.team.dao.TeamDao;
@@ -233,9 +238,9 @@ public class DealServiceImpl implements DealService {
 	
 	@Value("${xAmplify.base.url}")
     private String baseUrl;
-
-    @Value("${xAmplify.pat}")
-    private String xAmplifyPat;
+    
+    @Autowired
+    private CustomFieldsDao customFieldsDao;
 
 	@Override
 	public XtremandResponse saveDeal(DealDto dealDto) {
@@ -2285,7 +2290,7 @@ public class DealServiceImpl implements DealService {
 	@Override
 	public XtremandResponse saveDealCustomFormFromMcp(Integer userId) {
 		XtremandResponse response = new XtremandResponse();
-		if (!XamplifyUtils.isValidInteger(userId) || !XamplifyUtils.isValidString(xAmplifyPat)) {
+		if (!XamplifyUtils.isValidInteger(userId)) {
 			return response;
 		}
 
@@ -2293,9 +2298,13 @@ public class DealServiceImpl implements DealService {
 		if (!XamplifyUtils.isValidInteger(companyId)) {
 			return response;
 		}
+		String pat = integrationDao.fetchActiveIntegrationPAT(companyId);
+		if (!XamplifyUtils.isValidString(pat)) {
+			return response;
+		}
 
 		try {
-			Map<String, Object> formResponse = fetchMcpDealCustomForm(xAmplifyPat);
+			Map<String, Object> formResponse = fetchMcpDealCustomForm(pat);
 			if (formResponse == null || formResponse.isEmpty()) {
 				return response;
 			}
@@ -2305,10 +2314,21 @@ public class DealServiceImpl implements DealService {
 				return response;
 			}
 
-			FormDTO formDto = buildDealCustomFormDto(companyId, formType, formResponse.get("fields"));
-			if (formDto == null) {
-				return response;
-			}
+//			FormDTO formDto = buildDealCustomFormDto(companyId, formType, formResponse.get("fields"));
+//			if (formDto == null) {
+//				return response;
+//			}
+			
+			Object fields = formResponse.get("fields");
+            List<OpportunityFormFieldsDTO> defaultDealFields = Collections.emptyList();
+            if (!(fields instanceof List<?>) || ((List<?>) fields).isEmpty()) {
+                    defaultDealFields = customFieldsDao.getDealDefaultCustomFieldsDto();
+            }
+
+            FormDTO formDto = buildDealCustomFormDto(companyId, formType, fields, defaultDealFields);
+            if (formDto == null) {
+                    return response;
+            }
 
 			Integer formId = formDao.getSfCustomFormIdByCompanyIdAndFormType(companyId, formType);
 			if (XamplifyUtils.isValidInteger(formId)) {
@@ -2358,15 +2378,19 @@ public class DealServiceImpl implements DealService {
 	@Override
 	public XtremandResponse saveDealPipelinesFromMcp(Integer userId) {
 		XtremandResponse response = new XtremandResponse();
-		if (!XamplifyUtils.isValidInteger(userId) || !XamplifyUtils.isValidString(xAmplifyPat)) {
+		if (!XamplifyUtils.isValidInteger(userId)) {
 			return response;
 		}
 		Integer companyId = userDao.getCompanyIdByUserId(userId);
 		if (!XamplifyUtils.isValidInteger(companyId)) {
 			return response;
 		}
+		String pat = integrationDao.fetchActiveIntegrationPAT(companyId);
+		if (!XamplifyUtils.isValidString(pat)) {
+			return response;
+		}
 
-		Map<String, Object> pipelineResponse = fetchMcpDealPipelines();
+		Map<String, Object> pipelineResponse = fetchMcpDealPipelines(pat);
 		if (pipelineResponse == null || pipelineResponse.isEmpty()) {
 			response.setStatusCode(404);
 			response.setMessage("Pipeline(s) not found.");
@@ -2401,7 +2425,7 @@ public class DealServiceImpl implements DealService {
 						(a, b) -> a));
 		Map<String, Pipeline> pipelinesByName = existingPipelines.stream()
 				.filter(pipeline -> pipeline != null && XamplifyUtils.isValidString(pipeline.getName()))
-				.collect(Collectors.toMap(pipeline -> pipeline.getName().trim().toLowerCase(Locale.ROOT),
+				.collect(Collectors.toMap(pipeline -> pipeline.getName().trim(),
 						Function.identity(), (a, b) -> a));
 
 		Set<Integer> syncedPipelineIds = new HashSet<>();
@@ -2473,7 +2497,7 @@ public class DealServiceImpl implements DealService {
 		}
 	}
 
-	private Map<String, Object> fetchMcpDealPipelines() throws XamplifyDataAccessException {
+	private Map<String, Object> fetchMcpDealPipelines(String xAmplifyPat) throws XamplifyDataAccessException {
 		String url = buildMcpDealPipelinesUrl();
 		if (!XamplifyUtils.isValidString(url)) {
 			throw new IllegalStateException("MCP pipelines URL is empty");
@@ -2524,7 +2548,8 @@ public class DealServiceImpl implements DealService {
 		return FormTypeEnum.CRM_DEAL_CUSTOM_FORM;
 	}
 
-	private FormDTO buildDealCustomFormDto(Integer companyId, FormTypeEnum formType, Object fields) {
+	private FormDTO buildDealCustomFormDto(Integer companyId, FormTypeEnum formType, Object fields,
+			List<OpportunityFormFieldsDTO> defaultDealFields) {
 		CompanyProfile companyProfile = genericDAO.get(CompanyProfile.class, companyId);
 		if (companyProfile == null) {
 			return null;
@@ -2544,10 +2569,10 @@ public class DealServiceImpl implements DealService {
 		formDto.setCreatedBy(adminId);
 		formDto.setUpdatedBy(adminId);
 
-		List<FormLabelDTO> formLabelDTOs = buildDealCustomFormLabels(fields);
-		if (formLabelDTOs.isEmpty()) {
-			return null;
-		}
+		List<FormLabelDTO> formLabelDTOs = buildDealCustomFormLabels(fields, defaultDealFields);
+        if (formLabelDTOs.isEmpty()) {
+                return null;
+        }
 		formDto.setFormLabelDTOs(formLabelDTOs);
 		formDto.setFormLabelDTORows(utilService.constructFormRows(formLabelDTOs));
 
@@ -2558,13 +2583,18 @@ public class DealServiceImpl implements DealService {
 		return value != null ? String.valueOf(value) : null;
 	}
 
-	private List<FormLabelDTO> buildDealCustomFormLabels(Object fieldsObject) {
+	private List<FormLabelDTO> buildDealCustomFormLabels(Object fieldsObject,
+			List<OpportunityFormFieldsDTO> defaultDealFields) {
 		if (!(fieldsObject instanceof List<?>)) {
-			return Collections.emptyList();
+			return buildDealLabelsFromDefaults(defaultDealFields);
+		}
+		List<?> fieldList = (List<?>) fieldsObject;
+		if (fieldList.isEmpty()) {
+			return buildDealLabelsFromDefaults(defaultDealFields);
 		}
 		List<FormLabelDTO> labels = new ArrayList<>();
 		int order = 1;
-		for (Object fieldObject : (List<?>) fieldsObject) {
+		for (Object fieldObject : fieldList) {
 			if (!(fieldObject instanceof Map<?, ?>)) {
 				continue;
 			}
@@ -2597,6 +2627,94 @@ public class DealServiceImpl implements DealService {
 			labels.add(dto);
 		}
 		return labels;
+	}
+	
+	private List<FormLabelDTO> buildDealLabelsFromDefaults(List<OpportunityFormFieldsDTO> defaultDealFields) {
+		if (defaultDealFields == null || defaultDealFields.isEmpty()) {
+			return Collections.emptyList();
+		}
+		List<FormLabelDTO> labels = new ArrayList<>();
+		int order = 1;
+		for (OpportunityFormFieldsDTO field : defaultDealFields) {
+			if (field == null || !XamplifyUtils.isValidString(field.getLabel())) {
+				continue;
+			}
+			FormLabelDTO dto = new FormLabelDTO();
+			String labelId = XamplifyUtils.isValidString(field.getName()) ? field.getName().trim()
+					: XamplifyUtils.replaceSpacesWithUnderScore(field.getLabel());
+			dto.setLabelId(labelId);
+			dto.setHiddenLabelId(labelId);
+			dto.setLabelName(field.getLabel());
+			dto.setDisplayName(
+					XamplifyUtils.isValidString(field.getDisplayName()) ? field.getDisplayName() : field.getLabel());
+			dto.setLabelType(normalizeLabelType(field.getType()));
+			dto.setRequired(field.isRequired());
+			dto.setPlaceHolder(field.getPlaceHolder());
+			dto.setOrder(order);
+			dto.setColumnOrder(order++);
+			dto.setActive(true);
+			dto.setFormDefaultFieldType(field.getFormDefaultFieldType());
+			dto.setFormFieldType(field.getFormFieldType());
+			dto.setNonInteractive(field.isNonInteractive());
+			dto.setPrivate(field.isPrivate());
+			dto.setEmailNotificationEnabledOnUpdate(field.isEmailNotificationEnabledOnUpdate());
+
+			List<FormChoiceDTO> choiceDTOs = buildChoiceDtosFromPicklist(field.getOptions());
+			applyChoicesByType(dto, choiceDTOs);
+			labels.add(dto);
+		}
+		return labels;
+	}
+	
+	private String normalizeLabelType(String labelType) {
+		if (!XamplifyUtils.isValidString(labelType)) {
+			return FieldLabelType.TEXT.getType();
+		}
+		switch (labelType.trim().toLowerCase(Locale.ROOT)) {
+		case "text":
+			return FieldLabelType.TEXT.getType();
+		case "text area":
+		case "textarea":
+			return FieldLabelType.TEXTAREA.getType();
+		case "drop down":
+		case "select":
+			return FieldLabelType.SELECT.getType();
+		case "email":
+			return FieldLabelType.EMAIL.getType();
+		case "phone":
+			return FieldLabelType.PHONE.getType();
+		case "url":
+			return FieldLabelType.URL.getType();
+		case "check box":
+		case "checkbox":
+			return FieldLabelType.CHECKBOX.getType();
+		case "number":
+			return FieldLabelType.NUMBER.getType();
+		case "currency":
+			return FieldLabelType.CURRENCY.getType();
+		case "date":
+			return FieldLabelType.DATE.getType();
+		default:
+			return labelType.trim();
+		}
+	}
+
+	private List<FormChoiceDTO> buildChoiceDtosFromPicklist(List<PicklistValues> options) {
+		if (options == null || options.isEmpty()) {
+			return Collections.emptyList();
+		}
+		List<FormChoiceDTO> choices = new ArrayList<>();
+		for (PicklistValues option : options) {
+			if (option == null || !XamplifyUtils.isValidString(option.getLabel())) {
+				continue;
+			}
+			FormChoiceDTO choiceDTO = new FormChoiceDTO();
+			choiceDTO.setLabelId(option.getLabel());
+			choiceDTO.setHiddenLabelId(XamplifyUtils.replaceSpacesWithUnderScore(option.getLabel()));
+			choiceDTO.setName(option.getLabel());
+			choices.add(choiceDTO);
+		}
+		return choices;
 	}
 
 	private void applyChoicesByType(FormLabelDTO dto, List<FormChoiceDTO> choiceDTOs) {
@@ -2646,14 +2764,16 @@ public class DealServiceImpl implements DealService {
 		if (!baseUrl.endsWith("/")) {
 			baseUrl = baseUrl + "/";
 		}
-		return baseUrl + "mcp/deals/custom-form";
+		return baseUrl + "deal/custom-form";
+//		return "http://localhost:8080/deal/custom-form";
 	}
 
 	private String buildMcpDealPipelinesUrl() {
 		if (!baseUrl.endsWith("/")) {
 			baseUrl = baseUrl + "/";
 		}
-		return baseUrl + "mcp/deals/pipelines";
+		return baseUrl + "deal/pipelines";
+//		return "http://localhost:8080/deal/pipelines";
 	}
 
 	private Pipeline upsertDealPipeline(CompanyProfile companyProfile, Integer adminId, IntegrationType integrationType,
@@ -2665,11 +2785,11 @@ public class DealServiceImpl implements DealService {
 		String externalPipelineId = toString(pipelineMap.get("pipelineId"));
 		String pipelineName = toString(pipelineMap.get("pipelineName"));
 		Pipeline pipeline = null;
-		if (XamplifyUtils.isValidString(externalPipelineId)) {
-			pipeline = pipelinesByExternalId.get(externalPipelineId.trim());
+		if (XamplifyUtils.isValidString(pipelineName)) {
+			pipeline = pipelinesByName.get(pipelineName.trim());
 		}
-		if (pipeline == null && XamplifyUtils.isValidString(pipelineName)) {
-			pipeline = pipelinesByName.get(pipelineName.trim().toLowerCase(Locale.ROOT));
+		if (pipeline == null && XamplifyUtils.isValidString(externalPipelineId)) {
+			pipeline = pipelinesByExternalId.get(externalPipelineId.trim());
 		}
 
 		boolean isNew = pipeline == null;
@@ -2721,6 +2841,12 @@ public class DealServiceImpl implements DealService {
 			return;
 		}
 		int displayIndex = 1;
+		List<PipelineStage> stages = pipeline.getStages();
+		Integer maxId = 0;
+		if (stages != null && !stages.isEmpty()) {
+			maxId = stages.stream().max(Comparator.comparing(PipelineStage::getDisplayIndex)).get()
+					.getDisplayIndex();
+		}
 		for (Object stageObject : (List<?>) stagesObject) {
 			if (!(stageObject instanceof Map<?, ?>)) {
 				continue;
@@ -2764,8 +2890,8 @@ public class DealServiceImpl implements DealService {
 			}
 
 			int desiredDisplayIndex = displayIndex++;
-			if (!Objects.equals(stage.getDisplayIndex(), desiredDisplayIndex)) {
-				stage.setDisplayIndex(desiredDisplayIndex);
+			if (isNew || !Objects.equals(stage.getDisplayIndex(), desiredDisplayIndex)) {
+				stage.setDisplayIndex(++maxId);
 				stageChanged = true;
 			}
 			if (stage.isWon()) {
@@ -2820,18 +2946,21 @@ public class DealServiceImpl implements DealService {
 	public void saveAndPushDealToxAmplify(DealDto dealDto) {
 		if (dealDto != null && dealDto.getId() != null && dealDto.getId() > 0) {
 			try {
-				UserDTO userDTO = userDao.getSendorCompanyDetailsByUserId(dealDto.getUserId());
-				dealDto.setDealId(dealDto.getId());
-				if (userDTO != null) {
-					dealDto.setCreatedByCompanyName(userDTO.getCompanyName());
-					dealDto.setPartnerCompanyId(userDTO.getCompanyId());
-					dealDto.setCreatedByEmail(userDTO.getEmailId());
-					dealDto.setCreatedByName(userDTO.getFullName());
-				}
+				String pat = integrationDao.fetchActiveIntegrationPAT(dealDto.getCreatedForCompanyId());
+				if (XamplifyUtils.isValidString(pat)) {
+					UserDTO userDTO = userDao.getSendorCompanyDetailsByUserId(dealDto.getUserId());
+					dealDto.setDealId(dealDto.getId());
+					if (userDTO != null) {
+						dealDto.setCreatedByCompanyName(userDTO.getCompanyName());
+						dealDto.setPartnerCompanyId(userDTO.getCompanyId());
+						dealDto.setCreatedByEmail(userDTO.getEmailId());
+						dealDto.setCreatedByName(userDTO.getFullName());
+					}
 
-				populatePipelineDetailsForXamplifySync(dealDto);
-				populateLeadAndContactDetailsForXamplifySync(dealDto);
-				createPrmDeal(xAmplifyPat, dealDto);
+					populatePipelineDetailsForXamplifySync(dealDto);
+					populateLeadAndContactDetailsForXamplifySync(dealDto);
+					createPrmDeal(pat, dealDto);
+				}
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
@@ -2851,7 +2980,8 @@ public class DealServiceImpl implements DealService {
 		if (!baseUrl.endsWith("/")) {
 			baseUrl = baseUrl + "/";
 		}
-		String url = baseUrl + "mcp/deals/create";
+		String url = baseUrl + "deal/create";
+//		String url = "http://localhost:8080/deal/create";
 
 		HttpHeaders headers = new HttpHeaders();
 		headers.set(HttpHeaders.AUTHORIZATION, BEARER + patToken.trim());
@@ -3062,8 +3192,11 @@ public class DealServiceImpl implements DealService {
 	public void updateAndPushDealToxAmplify(DealDto dealDto) {
 		if (dealDto != null && dealDto.getId() != null && dealDto.getId() > 0) {
 			try {
-				populateDealDtoForXamplifySync(dealDto);
-				updatePrmDeal(xAmplifyPat, dealDto);
+				String pat = integrationDao.fetchActiveIntegrationPAT(dealDto.getCreatedForCompanyId());
+				if (XamplifyUtils.isValidString(pat)) {
+					populateDealDtoForXamplifySync(dealDto);
+					updatePrmDeal(pat, dealDto);
+				}
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
@@ -3097,7 +3230,8 @@ public class DealServiceImpl implements DealService {
 		if (!baseUrl.endsWith("/")) {
 			baseUrl = baseUrl + "/";
 		}
-		String url = baseUrl + "mcp/deals/updateDeal";
+		String url = baseUrl + "deal/update";
+//		String url = "http://localhost:8080/deal/update";
 
 		HttpHeaders headers = new HttpHeaders();
 		headers.set(HttpHeaders.AUTHORIZATION, BEARER + patToken.trim());
@@ -3144,7 +3278,7 @@ public class DealServiceImpl implements DealService {
 	public void updateDealStatusToxAmplify(DealDto dealDto) {
 		if (dealDto == null || !XamplifyUtils.isValidInteger(dealDto.getId())
 				|| !XamplifyUtils.isValidInteger(dealDto.getPipelineStageId())
-				|| !XamplifyUtils.isValidInteger(dealDto.getUserId()) || !XamplifyUtils.isValidString(xAmplifyPat)) {
+				|| !XamplifyUtils.isValidInteger(dealDto.getUserId())) {
 			return;
 		}
 
@@ -3153,31 +3287,35 @@ public class DealServiceImpl implements DealService {
 		if (deal == null || pipelineStage == null) {
 			return;
 		}
+		
+		String pat = integrationDao.fetchActiveIntegrationPAT(deal.getCreatedForCompany().getId());
 
-		DealStatusUpdateRequest statusUpdateRequest = new DealStatusUpdateRequest();
-		statusUpdateRequest.setDealId(deal.getId());
-		statusUpdateRequest.setPipelineStageName(pipelineStage.getStageName());
+		if (XamplifyUtils.isValidString(pat)) {
+			DealStatusUpdateRequest statusUpdateRequest = new DealStatusUpdateRequest();
+			statusUpdateRequest.setDealId(deal.getId());
+			statusUpdateRequest.setPipelineStageName(pipelineStage.getStageName());
 
-		Integer updaterCompanyId = userDao.getCompanyIdByUserId(dealDto.getUserId());
-		User updater = genericDAO.get(User.class, dealDto.getUserId());
-		if (updater != null && XamplifyUtils.isValidInteger(updaterCompanyId)) {
-			String updaterFullName = buildFullName(updater.getFirstName(), updater.getLastName());
-			if (deal.getCreatedForCompany() != null
-					&& Objects.equals(updaterCompanyId, deal.getCreatedForCompany().getId())) {
-				statusUpdateRequest.setVendorUsername(updaterFullName);
-				statusUpdateRequest.setVendorEmailId(updater.getEmailId());
-			} else if (deal.getCreatedByCompany() != null
-					&& Objects.equals(updaterCompanyId, deal.getCreatedByCompany().getId())) {
-				statusUpdateRequest.setPartnerCompanyId(updaterCompanyId);
-				statusUpdateRequest.setPartnerUsername(updaterFullName);
-				statusUpdateRequest.setPartnerEmailId(updater.getEmailId());
+			Integer updaterCompanyId = userDao.getCompanyIdByUserId(dealDto.getUserId());
+			User updater = genericDAO.get(User.class, dealDto.getUserId());
+			if (updater != null && XamplifyUtils.isValidInteger(updaterCompanyId)) {
+				String updaterFullName = buildFullName(updater.getFirstName(), updater.getLastName());
+				if (deal.getCreatedForCompany() != null
+						&& Objects.equals(updaterCompanyId, deal.getCreatedForCompany().getId())) {
+					statusUpdateRequest.setVendorUsername(updaterFullName);
+					statusUpdateRequest.setVendorEmailId(updater.getEmailId());
+				} else if (deal.getCreatedByCompany() != null
+						&& Objects.equals(updaterCompanyId, deal.getCreatedByCompany().getId())) {
+					statusUpdateRequest.setPartnerCompanyId(updaterCompanyId);
+					statusUpdateRequest.setPartnerUsername(updaterFullName);
+					statusUpdateRequest.setPartnerEmailId(updater.getEmailId());
+				}
 			}
-		}
 
-		pushDealStatusUpdateToXamplify(statusUpdateRequest);
+			pushDealStatusUpdateToXamplify(statusUpdateRequest, pat);
+		}
 	}
 
-	private void pushDealStatusUpdateToXamplify(DealStatusUpdateRequest statusUpdateRequest)
+	private void pushDealStatusUpdateToXamplify(DealStatusUpdateRequest statusUpdateRequest, String xAmplifyPat)
 			throws XamplifyDataAccessException {
 		if (statusUpdateRequest == null || !XamplifyUtils.isValidInteger(statusUpdateRequest.getDealId())
 				|| !XamplifyUtils.isValidString(statusUpdateRequest.getPipelineStageName())) {
@@ -3187,7 +3325,8 @@ public class DealServiceImpl implements DealService {
 		if (!baseUrl.endsWith("/")) {
 			baseUrl = baseUrl + "/";
 		}
-		String url = baseUrl + "mcp/deals/status/update";
+		String url = baseUrl + "deal/status/update";
+//		String url = "http://localhost:8080/deal/status/update";
 
 		HttpHeaders headers = new HttpHeaders();
 		headers.set(HttpHeaders.AUTHORIZATION, BEARER + xAmplifyPat.trim());
@@ -3220,10 +3359,9 @@ public class DealServiceImpl implements DealService {
 	}
 	
 	@Override
-	public XtremandResponse syncDeals(Integer userId) {
+	public XtremandResponse syncDeals(Integer userId, Integer companyId) {
 		XtremandResponse response = new XtremandResponse();
-		Integer createdForCompanyId = userDao.getCompanyIdByUserId(userId);
-		if (!XamplifyUtils.isValidInteger(createdForCompanyId) || !XamplifyUtils.isValidInteger(userId)) {
+		if (!XamplifyUtils.isValidInteger(companyId) || !XamplifyUtils.isValidInteger(userId)) {
 			response.setStatusCode(400);
 			response.setMessage(INVALID_INPUT);
 			return response;
@@ -3231,13 +3369,13 @@ public class DealServiceImpl implements DealService {
 
 		CompanyProfile companyProfile = userService.getCompanyProfileByUser(userId);
 		if (companyProfile == null || companyProfile.getId() == null
-				|| !companyProfile.getId().equals(createdForCompanyId)) {
+				|| !companyProfile.getId().equals(companyId)) {
 			response.setStatusCode(401);
 			response.setMessage(UNAUTHORIZED);
 			return response;
 		}
 
-		List<Deal> deals = dealDAO.findDealsByCreatedForCompanyId(createdForCompanyId);
+		List<Deal> deals = dealDAO.findDealsByCreatedForCompanyId(companyId);
 		if (deals == null || deals.isEmpty()) {
 			response.setStatusCode(200);
 			response.setMessage(SUCCESS);
@@ -3245,7 +3383,7 @@ public class DealServiceImpl implements DealService {
 			return response;
 		}
 
-		Integration activeCRMIntegration = integrationDao.getActiveCRMIntegration(createdForCompanyId);
+		Integration activeCRMIntegration = integrationDao.getActiveCRMIntegration(companyId);
 		IntegrationType activeIntegrationType = activeCRMIntegration != null ? activeCRMIntegration.getType() : null;
 		Integration otherActiveCRMIntegration = null;
 
@@ -3259,16 +3397,16 @@ public class DealServiceImpl implements DealService {
 					continue;
 				}
 
-				DealSyncDetailsDto dealDetails = fetchOpenSourceDeal(openSourceDealId);
+				DealSyncDetailsDto dealDetails = fetchOpenSourceDeal(openSourceDealId, activeCRMIntegration.getAccessToken());
 				applyDealUpdates(deal, dealDetails);
-				updateDealPipeline(deal, dealDetails, createdForCompanyId, activeIntegrationType);
-				updateSfCustomFieldsData(deal, dealDetails, createdForCompanyId, activeIntegrationType,
+				updateDealPipeline(deal, dealDetails, companyId, activeIntegrationType);
+				updateSfCustomFieldsData(deal, dealDetails, companyId, activeIntegrationType,
 						otherActiveCRMIntegration);
 				genericDAO.update(deal);
 				synced++;
 			} catch (Exception ex) {
 				failed++;
-				LOGGER.error("Error syncing deal {} for company {}", deal.getId(), createdForCompanyId, ex);
+				LOGGER.error("Error syncing deal {} for company {}", deal.getId(), companyId, ex);
 			}
 		}
 
@@ -3281,12 +3419,13 @@ public class DealServiceImpl implements DealService {
 		return response;
 	}
 	
-	private DealSyncDetailsDto fetchOpenSourceDeal(String openSourceDealId) {
+	private DealSyncDetailsDto fetchOpenSourceDeal(String openSourceDealId, String xAmplifyPat) {
 		if (!XamplifyUtils.isValidString(openSourceDealId)) {
 			throw new IllegalArgumentException("openSourceDealId is required");
 		}
 
-		String url = baseUrl + "mcp/deals/open-source/" + openSourceDealId.trim();
+		String url = baseUrl + "deal/getById/" + openSourceDealId.trim();
+//		String url = "http://localhost:8080/deal/getById/" + openSourceDealId.trim();
 		HttpHeaders headers = new HttpHeaders();
 		headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
 		if (StringUtils.isNotBlank(xAmplifyPat)) {
@@ -3487,6 +3626,18 @@ public class DealServiceImpl implements DealService {
 			}
 		}
 
+	}
+
+	@Override
+	public XtremandResponse syncDeals(Integer userId) {
+		XtremandResponse response = new XtremandResponse();
+		if (!XamplifyUtils.isValidInteger(userId)) {
+			response.setStatusCode(400);
+			response.setMessage(INVALID_INPUT);
+			return response;
+		}
+		Integer companyId = userDao.getCompanyIdByUserId(userId);
+		return syncDeals(userId, companyId);
 	}
 
 }

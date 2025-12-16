@@ -1385,6 +1385,7 @@ public class HibernateLeadDAO implements LeadDAO {
 		Session session = sessionFactory.getCurrentSession();
 		Criteria criteria = session.createCriteria(Lead.class);
 		criteria.add(Restrictions.eq("createdForCompany.id", createdForCompanyId));
+		criteria.addOrder(Order.desc("id"));
 		return criteria.list();
 	}
 

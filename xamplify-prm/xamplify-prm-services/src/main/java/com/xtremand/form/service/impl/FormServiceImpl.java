@@ -712,7 +712,11 @@ public class FormServiceImpl implements FormService {
 			FormLabelChoice choice = new FormLabelChoice();
 			choice.setLabelChoiceName(formChoiceDTO.getName().trim());
 			choice.setLabelChoiceId(formChoiceDTO.getLabelId().trim());
-			choice.setLabelChoiceHiddenId(formChoiceDTO.getHiddenLabelId().trim());
+			if (formChoiceDTO.getHiddenLabelId() != null && formChoiceDTO.getHiddenLabelId().trim() != null && !formChoiceDTO.getHiddenLabelId().trim().isEmpty()) {
+				choice.setLabelChoiceHiddenId(formChoiceDTO.getHiddenLabelId().trim());
+			} else {
+				choice.setLabelChoiceHiddenId("");
+			}
 			choice.setFormLabel(formLabel);
 			choice.setDefaultColumn(formChoiceDTO.isDefaultColumn());
 			if (formChoiceDTO.isCorrect()) {

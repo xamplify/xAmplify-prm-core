@@ -11,6 +11,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.text.WordUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.json.simple.parser.ParseException;
@@ -38,6 +39,7 @@ import com.xtremand.common.bom.FindLevel;
 import com.xtremand.customfields.service.CustomFieldsService;
 import com.xtremand.dao.util.GenericDAO;
 import com.xtremand.deal.bom.Deal;
+import com.xtremand.deal.service.DealService;
 import com.xtremand.form.bom.FormTypeEnum;
 import com.xtremand.form.dao.FormDao;
 import com.xtremand.form.dto.FormChoiceDTO;
@@ -64,6 +66,7 @@ import com.xtremand.lead.bom.PipelineType;
 import com.xtremand.lead.dao.LeadDAO;
 import com.xtremand.lead.dto.PipelineDto;
 import com.xtremand.lead.dto.PipelineRequestDTO;
+import com.xtremand.lead.service.LeadService;
 import com.xtremand.mail.service.AsyncComponent;
 import com.xtremand.pipeline.dao.PipelineDAO;
 import com.xtremand.pipeline.service.PipelineService;
@@ -187,6 +190,12 @@ public class IntegrationWrapperServiceImpl implements IntegrationWrapperService 
 
 	@Value("${xAmplify.base.url}")
 	private String baseUrl;
+	
+	@Autowired
+	private LeadService leadService;
+	
+	@Autowired
+	private DealService dealService;
 
 	private static final String UNAUTHORIZED = "UnAuthorized";
 	private static final String SUCCESS = "Success";
@@ -596,8 +605,17 @@ public class IntegrationWrapperServiceImpl implements IntegrationWrapperService 
 				if (activeCRMIntegration != null) {
 					integrationDTO.setType(activeCRMIntegration.getType());
 					integrationDTO.setActiveCRM(true);
-					integrationDTO.setShowLeadPipeline(activeCRMIntegration.isShowLeadPipeline());
-					integrationDTO.setShowLeadPipelineStage(activeCRMIntegration.isShowLeadPipelineStage());
+//					integrationDTO.setShowLeadPipeline(activeCRMIntegration.isShowLeadPipeline());
+//					integrationDTO.setShowLeadPipelineStage(activeCRMIntegration.isShowLeadPipelineStage());
+					integrationDTO.setExternalOrganizationName(activeCRMIntegration.getExternalOrganizationName());
+					integrationDTO.setExternalUserName(activeCRMIntegration.getExternalUserName());
+					integrationDTO.setExternalEmail(activeCRMIntegration.getExternalEmail());
+					integrationDTO.setPat(activeCRMIntegration.getAccessToken());
+					integrationDTO.setXAmpUserEmail(activeCRMIntegration.getXAmpUserEmail());
+					integrationDTO.setXAmpUserName(activeCRMIntegration.getXAmpUserName());
+					integrationDTO.setXAmpUserOrganization(activeCRMIntegration.getXAmpUserOrganization());
+					integrationDTO.setXAmpCrmType(WordUtils.capitalizeFully(activeCRMIntegration.getXAmpCrmType()));
+					integrationDTO.setUpdatedDate(activeCRMIntegration.getUpdatedTime());
 				} else {
 					integrationDTO.setActiveCRM(false);
 				}
@@ -1652,6 +1670,10 @@ public class IntegrationWrapperServiceImpl implements IntegrationWrapperService 
 		}
 
 		saveCustomCrmIntegration(companyId, pat, userId, contextResponse);
+		leadService.saveLeadCustomFormFromMcp(userId);
+        leadService.saveLeadPipelinesFromMcp(userId);
+        dealService.saveDealCustomFormFromMcp(userId);
+        dealService.saveDealPipelinesFromMcp(userId);
 		response.setStatusCode(HttpStatus.OK.value());
 		response.setMessage("PAT validated successfully.");
 		response.setData(contextResponse);
@@ -1676,7 +1698,7 @@ public class IntegrationWrapperServiceImpl implements IntegrationWrapperService 
 		if (!baseUrl.endsWith("/")) {
 			baseUrl = baseUrl + "/";
 		}
-		return baseUrl + "mcp/context";
+		return baseUrl + "context";
 	}
 	
 	private String toString(Object value) {
@@ -1700,10 +1722,15 @@ public class IntegrationWrapperServiceImpl implements IntegrationWrapperService 
 		integration.setActive(true);
 		integration.setAccessToken(pat);
 		integration.setType(IntegrationType.CUSTOM_CRM);
-		integration.setExternalUserName(toString(contextResponse.get("username")));
-		integration.setExternalOrganizationName(toString(contextResponse.get("companyName")));
-		integration.setExternalUserId(toString(contextResponse.get("tokenId")));
-		integration.setExternalOrganizationId(toString(contextResponse.get("companyId")));
+		integration.setExternalUserName(toString(contextResponse.get("activeCRMUserName")));
+		integration.setExternalOrganizationName(toString(contextResponse.get("activeCRMOrganizationName")));
+//		integration.setExternalUserId(toString(contextResponse.get("tokenId")));
+//		integration.setExternalOrganizationId(toString(contextResponse.get("companyId")));
+		integration.setExternalEmail(toString(contextResponse.get("activeCRMUserEmailId")));
+		integration.setXAmpUserEmail(toString(contextResponse.get("emailId")));
+		integration.setXAmpUserName(toString(contextResponse.get("userName")));
+		integration.setXAmpUserOrganization(toString(contextResponse.get("companyName")));
+		integration.setXAmpCrmType(toString(contextResponse.get("crmType")));
 		integration.initialiseCommonFields(isNew, userId);
 		if (isNew) {
 			genericDAO.save(integration);

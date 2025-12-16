@@ -117,4 +117,6 @@ public interface DealService {
 	
 	XtremandResponse syncDeals(Integer userId);
 
+	XtremandResponse syncDeals(Integer userId, Integer companyId);
+
 }

@@ -130,5 +130,9 @@ public interface LeadService {
 	void updateAndPushLeadToxAmplify(LeadDto leadDto);
 	
 	XtremandResponse syncLeads(Integer userId);
+	
+	XtremandResponse syncDetailsWithXamplify(Integer userId);
+
+	XtremandResponse syncLeads(Integer userId, Integer companyId);
 
 }

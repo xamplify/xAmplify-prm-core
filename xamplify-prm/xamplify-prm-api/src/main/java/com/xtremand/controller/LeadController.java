@@ -337,5 +337,10 @@ public class LeadController {
 	public ResponseEntity<XtremandResponse> syncLeads(@PathVariable Integer userId) {
 		return ResponseEntity.ok(leadService.syncLeads(userId));
 	}
+	
+	@GetMapping("/sync/details/{userId}")
+	public ResponseEntity<XtremandResponse> syncWithXamplify(@PathVariable Integer userId) {
+		return ResponseEntity.ok(leadService.syncDetailsWithXamplify(userId));
+	}
 
 }

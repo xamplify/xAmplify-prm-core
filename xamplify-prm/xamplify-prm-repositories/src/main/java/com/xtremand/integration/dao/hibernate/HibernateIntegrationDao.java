@@ -431,4 +431,12 @@ public class HibernateIntegrationDao implements IntegrationDao {
 		return hibernateSQLQueryResultUtilDao.returnBoolean(hibernateSQLQueryResultRequestDTO);
 	}
 
+	@Override
+	public String fetchActiveIntegrationPAT(Integer companyId) {
+		Session session = sessionFactory.getCurrentSession();
+		String activeCRMQueryString = "select access_token from xt_integration where company_id = :companyId and active";
+		return (String) session.createSQLQuery(activeCRMQueryString).setParameter("companyId", companyId)
+				.uniqueResult();
+	}
+
 }
