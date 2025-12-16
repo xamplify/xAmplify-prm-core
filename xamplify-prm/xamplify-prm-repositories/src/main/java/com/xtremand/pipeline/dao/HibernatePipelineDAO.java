@@ -3,6 +3,8 @@ package com.xtremand.pipeline.dao;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 import org.hibernate.Criteria;
 import org.hibernate.Query;
@@ -12,6 +14,7 @@ import org.hibernate.SessionFactory;
 import org.hibernate.criterion.Order;
 import org.hibernate.criterion.Projections;
 import org.hibernate.criterion.Restrictions;
+import org.hibernate.type.StandardBasicTypes;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,18 +24,29 @@ import com.xtremand.integration.bom.Integration.IntegrationType;
 import com.xtremand.lead.bom.Pipeline;
 import com.xtremand.lead.bom.PipelineStage;
 import com.xtremand.lead.bom.PipelineType;
+import com.xtremand.lead.dto.PipelineDto;
 import com.xtremand.lead.dto.PipelineRequestDTO;
 import com.xtremand.lead.dto.PipelineResponseDTO;
+import com.xtremand.lead.dto.PipelineStageDto;
 import com.xtremand.lead.dto.PipelineStageResponseDTO;
 import com.xtremand.util.PaginationUtil;
 import com.xtremand.util.XamplifyUtils;
 import com.xtremand.util.dao.HibernateSQLQueryResultUtilDao;
 import com.xtremand.util.dto.HibernateSQLQueryResultRequestDTO;
 import com.xtremand.util.dto.QueryParameterDTO;
+import com.xtremand.util.dto.QueryParameterListDTO;
 
 @Repository("PipelineDAO")
 @Transactional
 public class HibernatePipelineDAO implements PipelineDAO {
+
+	private static final String TARGET_STAGE_ID = "targetStageId";
+
+	private static final String TARGET_PIPELINE_ID = "targetPipelineId";
+
+	private static final String INTEGRATION_TYPE = "integrationType";
+
+	private static final String PIPELINE_IDS = "pipelineIds";
 
 	@Autowired
 	private SessionFactory sessionFactory;
@@ -137,10 +151,12 @@ public class HibernatePipelineDAO implements PipelineDAO {
 	@Override
 	public List<Pipeline> getPipelinesByIntegrationType(Integer companyId, PipelineType type,
 			IntegrationType integrationType, Boolean isPrivate) {
-		integrationType = IntegrationType.XAMPLIFY;
+		if (integrationType == null) {
+			integrationType = IntegrationType.XAMPLIFY;
+		}
 		Session session = sessionFactory.getCurrentSession();
 		org.hibernate.Criteria criteria = session.createCriteria(Pipeline.class);
-		criteria.add(Restrictions.eq("integrationType", integrationType));
+		criteria.add(Restrictions.eq(INTEGRATION_TYPE, integrationType));
 		criteria.add(Restrictions.eq("company.id", companyId));
 		criteria.add(Restrictions.eq("type", type));
 		if (isPrivate != null) {
@@ -154,7 +170,7 @@ public class HibernatePipelineDAO implements PipelineDAO {
 	public List<Pipeline> getPipelinesByIntegrationType(Integer companyId, IntegrationType integrationType) {
 		Session session = sessionFactory.getCurrentSession();
 		org.hibernate.Criteria criteria = session.createCriteria(Pipeline.class);
-		criteria.add(Restrictions.eq("integrationType", integrationType));
+		criteria.add(Restrictions.eq(INTEGRATION_TYPE, integrationType));
 		criteria.add(Restrictions.eq("company.id", companyId));
 		return criteria.list();
 	}
@@ -167,16 +183,20 @@ public class HibernatePipelineDAO implements PipelineDAO {
 		criteria.add(Restrictions.eq("externalPipelineId", externalPipelineId));
 		criteria.add(Restrictions.eq("company.id", companyId));
 		criteria.add(Restrictions.eq("type", PipelineType.DEAL));
-		criteria.add(Restrictions.eq("integrationType", integrationType));
+		criteria.add(Restrictions.eq(INTEGRATION_TYPE, integrationType));
 		return (Pipeline) criteria.uniqueResult();
 	}
 
 	@Override
 	public PipelineStage getPipelineStageByExternalPipelineStageId(Integer companyId, Integer pipelineId,
-			String externalPipelineStageId) {
+			String externalPipelineStageId, String stageName) {
 		Session session = sessionFactory.getCurrentSession();
 		org.hibernate.Criteria criteria = session.createCriteria(PipelineStage.class, "PS");
-		criteria.add(Restrictions.eq("externalPipelineStageId", externalPipelineStageId));
+		if (XamplifyUtils.isValidString(externalPipelineStageId)) {
+			criteria.add(Restrictions.eq("externalPipelineStageId", externalPipelineStageId));
+		} else if (XamplifyUtils.isValidString(stageName)) {
+			criteria.add(Restrictions.eq("stageName", stageName));
+		}
 		criteria.add(Restrictions.eq("pipeline.id", pipelineId));
 		return (PipelineStage) criteria.uniqueResult();
 	}
@@ -196,7 +216,7 @@ public class HibernatePipelineDAO implements PipelineDAO {
 		Criteria criteria = session.createCriteria(Pipeline.class);
 		criteria.add(Restrictions.eq("company.id", companyId));
 		criteria.add(Restrictions.eq("type", type));
-		criteria.add(Restrictions.eq("integrationType", integrationType));
+		criteria.add(Restrictions.eq(INTEGRATION_TYPE, integrationType));
 		criteria.add(Restrictions.eq("isPrivate", false));
 		criteria.setProjection(Projections.rowCount());
 		return ((Long) criteria.uniqueResult()).intValue();
@@ -255,7 +275,7 @@ public class HibernatePipelineDAO implements PipelineDAO {
 			IntegrationType integrationType, Boolean isPrivate, List<String> externalPipelineIds) {
 		Session session = sessionFactory.getCurrentSession();
 		org.hibernate.Criteria criteria = session.createCriteria(Pipeline.class);
-		criteria.add(Restrictions.eq("integrationType", integrationType));
+		criteria.add(Restrictions.eq(INTEGRATION_TYPE, integrationType));
 		criteria.add(Restrictions.eq("company.id", companyId));
 		criteria.add(Restrictions.eq("type", type));
 		criteria.add(Restrictions.in("externalPipelineId", externalPipelineIds));
@@ -356,7 +376,7 @@ public class HibernatePipelineDAO implements PipelineDAO {
 		hibernateSQLQueryResultRequestDTO.setQueryString(sqlQueryString);
 		hibernateSQLQueryResultRequestDTO.getQueryParameterDTOs().add(new QueryParameterDTO("companyId", companyId));
 		hibernateSQLQueryResultRequestDTO.getQueryParameterDTOs()
-				.add(new QueryParameterDTO("integrationType", integrationType.toLowerCase()));
+				.add(new QueryParameterDTO(INTEGRATION_TYPE, integrationType.toLowerCase()));
 		hibernateSQLQueryResultRequestDTO.getQueryParameterDTOs().add(new QueryParameterDTO("type", type.name()));
 		hibernateSQLQueryResultRequestDTO.setClassInstance(PipelineResponseDTO.class);
 		return (List<PipelineResponseDTO>) hibernateSQLQueryResultUtilDao
@@ -385,12 +405,155 @@ public class HibernatePipelineDAO implements PipelineDAO {
 		hibernateSQLQueryResultRequestDTO.setQueryString(sqlQuery);
 		hibernateSQLQueryResultRequestDTO.getQueryParameterDTOs().add(new QueryParameterDTO("companyId", companyId));
 		hibernateSQLQueryResultRequestDTO.getQueryParameterDTOs()
-				.add(new QueryParameterDTO("integrationType", integrationType.name().toLowerCase()));
+				.add(new QueryParameterDTO(INTEGRATION_TYPE, integrationType.name().toLowerCase()));
 		hibernateSQLQueryResultRequestDTO.getQueryParameterDTOs()
 				.add(new QueryParameterDTO("pipelineType", pipelineType.name()));
 		hibernateSQLQueryResultRequestDTO.setClassInstance(PipelineResponseDTO.class);
 		return (List<PipelineResponseDTO>) hibernateSQLQueryResultUtilDao
 				.returnDTOList(hibernateSQLQueryResultRequestDTO);
+	}
+	
+	@Override
+	public Pipeline getLeadPipelineByExternalPipelineId(Integer companyId, String externalPipelineId,
+			IntegrationType integrationType) {
+		Session session = sessionFactory.getCurrentSession();
+		org.hibernate.Criteria criteria = session.createCriteria(Pipeline.class);
+		criteria.add(Restrictions.eq("externalPipelineId", externalPipelineId));
+		criteria.add(Restrictions.eq("company.id", companyId));
+		criteria.add(Restrictions.eq("type", PipelineType.LEAD));
+		criteria.add(Restrictions.eq(INTEGRATION_TYPE, integrationType));
+		return (Pipeline) criteria.uniqueResult();
+	}
+	
+	@Override
+	public void reassignLeadPipelines(List<Pipeline> pipelinesToRemove, Pipeline targetPipeline) {
+		if (pipelinesToRemove == null || pipelinesToRemove.isEmpty() || targetPipeline == null
+				|| targetPipeline.getId() == null) {
+			return;
+		}
+
+		List<Integer> pipelineIds = pipelinesToRemove.stream().map(Pipeline::getId).filter(Objects::nonNull)
+				.collect(Collectors.toList());
+		if (pipelineIds.isEmpty()) {
+			return;
+		}
+
+		Session session = sessionFactory.getCurrentSession();
+		Integer targetPipelineId = targetPipeline.getId();
+		PipelineStage targetStage = findFallbackStage(targetPipelineId);
+		Integer targetStageId = targetStage != null ? targetStage.getId() : null;
+
+		Query pipelineUpdate = session.createSQLQuery(
+				"update xt_lead set pipeline_id = :targetPipelineId, created_for_pipeline_id = :targetPipelineId, "
+				+ " pipeline_stage_id = :targetStageId, created_for_pipeline_stage_id = :targetStageId"
+				+ " where pipeline_id in (:pipelineIds)");
+		pipelineUpdate.setParameter(TARGET_PIPELINE_ID, targetPipelineId);
+		pipelineUpdate.setParameter(TARGET_STAGE_ID, targetStageId);
+		pipelineUpdate.setParameterList(PIPELINE_IDS, pipelineIds);
+		pipelineUpdate.executeUpdate();
+		
+	}
+
+	@Override
+	public PipelineStage findFallbackStage(Integer pipelineId) {
+		if (!XamplifyUtils.isValidInteger(pipelineId)) {
+			return null;
+		}
+
+		PipelineStage defaultStage = getDefaultStage(pipelineId);
+		if (defaultStage != null) {
+			return defaultStage;
+		}
+
+		Session session = sessionFactory.getCurrentSession();
+		Query stageQuery = session
+				.createQuery("from PipelineStage where pipeline.id = :pipelineId order by displayIndex asc");
+		stageQuery.setParameter("pipelineId", pipelineId);
+		stageQuery.setMaxResults(1);
+		return (PipelineStage) stageQuery.uniqueResult();
+	}
+	
+	@Override
+	public void reassignDealPipelines(List<Pipeline> pipelinesToRemove, Pipeline targetPipeline) {
+		if (pipelinesToRemove == null || pipelinesToRemove.isEmpty() || targetPipeline == null
+				|| targetPipeline.getId() == null) {
+			return;
+		}
+
+		List<Integer> pipelineIds = pipelinesToRemove.stream().map(Pipeline::getId).filter(Objects::nonNull)
+				.collect(Collectors.toList());
+		if (pipelineIds.isEmpty()) {
+			return;
+		}
+
+		Session session = sessionFactory.getCurrentSession();
+		Integer targetPipelineId = targetPipeline.getId();
+		PipelineStage targetStage = findFallbackStage(targetPipelineId);
+		Integer targetStageId = targetStage != null ? targetStage.getId() : null;
+
+		Query pipelineUpdate = session.createSQLQuery(
+				"update xt_deal set pipeline_id = :targetPipelineId, created_for_pipeline_id = :targetPipelineId, "
+				+ "pipeline_stage_id = :targetStageId, created_for_pipeline_stage_id = :targetStageId "
+				+ " where pipeline_id in (:pipelineIds)");
+		pipelineUpdate.setParameter(TARGET_PIPELINE_ID, targetPipelineId);
+		pipelineUpdate.setParameter(TARGET_STAGE_ID, targetStageId);
+		pipelineUpdate.setParameterList(PIPELINE_IDS, pipelineIds);
+		pipelineUpdate.executeUpdate();
+
+	}
+	
+	@Override
+	public void deletePipelineStages(List<Pipeline> pipelinesToRemove) {
+		if (pipelinesToRemove == null || pipelinesToRemove.isEmpty()) {
+			return;
+		}
+
+		List<Integer> pipelineIds = pipelinesToRemove.stream().map(Pipeline::getId).filter(Objects::nonNull)
+				.collect(Collectors.toList());
+		if (pipelineIds.isEmpty()) {
+			return;
+		}
+
+		Session session = sessionFactory.getCurrentSession();
+		Query stageDelete = session.createSQLQuery("delete from xt_pipeline_stage where pipeline_id in (:pipelineIds)");
+		stageDelete.setParameterList(PIPELINE_IDS, pipelineIds);
+		stageDelete.executeUpdate();
+	}
+	
+	@Override
+	public void deletePipelines(List<Pipeline> pipelinesToRemove) {
+		if (pipelinesToRemove == null || pipelinesToRemove.isEmpty()) {
+			return;
+		}
+
+		List<Integer> pipelineIds = pipelinesToRemove.stream().map(Pipeline::getId).filter(Objects::nonNull)
+				.collect(Collectors.toList());
+		if (pipelineIds.isEmpty()) {
+			return;
+		}
+
+		Session session = sessionFactory.getCurrentSession();
+		Query pipelineDelete = session.createSQLQuery("delete from xt_pipeline where id in (:pipelineIds)");
+		pipelineDelete.setParameterList(PIPELINE_IDS, pipelineIds);
+		pipelineDelete.executeUpdate();
+	}
+
+	@Override
+	public PipelineDto fetchPipelineDetailsByPipelineId(Integer pipelineId) {
+		HibernateSQLQueryResultRequestDTO hibernateSQLQueryResultRequestDTO = new HibernateSQLQueryResultRequestDTO();
+		String sqlQuery = "select name as \"name\", external_pipeline_id as \"externalPipelineId\" from xt_pipeline where id = :pipelineId";
+		hibernateSQLQueryResultRequestDTO.setQueryString(sqlQuery);
+		hibernateSQLQueryResultRequestDTO.getQueryParameterDTOs().add(new QueryParameterDTO("pipelineId", pipelineId));
+		return (PipelineDto) hibernateSQLQueryResultUtilDao.getDto(hibernateSQLQueryResultRequestDTO, PipelineDto.class);
+	}
+
+	@Override
+	public PipelineStageDto fetchPipelineStageDetailsByPipelineStageId(Integer pipelineStageId) {
+		HibernateSQLQueryResultRequestDTO hibernateSQLQueryResultRequestDTO = new HibernateSQLQueryResultRequestDTO();
+		String sqlQuery = "select stage_name as \"stageName\", external_pipeline_stage_id as \"externalPipelineStageId\" from xt_pipeline_stage where id = :pipelineStageId";
+		hibernateSQLQueryResultRequestDTO.setQueryString(sqlQuery);
+		hibernateSQLQueryResultRequestDTO.getQueryParameterDTOs().add(new QueryParameterDTO("pipelineStageId", pipelineStageId));
+		return (PipelineStageDto) hibernateSQLQueryResultUtilDao.getDto(hibernateSQLQueryResultRequestDTO, PipelineStageDto.class);
 	}
 
 }

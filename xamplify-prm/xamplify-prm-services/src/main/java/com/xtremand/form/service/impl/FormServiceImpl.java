@@ -612,6 +612,7 @@ public class FormServiceImpl implements FormService {
 		Integer userId = formDto.getCreatedBy();
 		String companyProfileName = formDto.getCompanyProfileName();
 		List<String> formNames = formDao.listFormNamesByCompanyId(userId, companyProfileName);
+		formNames = formNames != null && !formNames.isEmpty() ? formNames : Collections.emptyList();
 		if (formDto.getId() != null && !formDto.isSaveAs()) {
 			String existingFormName = formDao.getById(formDto.getId()).getFormName().trim();
 			if (formNames.indexOf(formDto.getName().toLowerCase()) > -1
@@ -711,7 +712,11 @@ public class FormServiceImpl implements FormService {
 			FormLabelChoice choice = new FormLabelChoice();
 			choice.setLabelChoiceName(formChoiceDTO.getName().trim());
 			choice.setLabelChoiceId(formChoiceDTO.getLabelId().trim());
-			choice.setLabelChoiceHiddenId(formChoiceDTO.getHiddenLabelId().trim());
+			if (formChoiceDTO.getHiddenLabelId() != null && formChoiceDTO.getHiddenLabelId().trim() != null && !formChoiceDTO.getHiddenLabelId().trim().isEmpty()) {
+				choice.setLabelChoiceHiddenId(formChoiceDTO.getHiddenLabelId().trim());
+			} else {
+				choice.setLabelChoiceHiddenId("");
+			}
 			choice.setFormLabel(formLabel);
 			choice.setDefaultColumn(formChoiceDTO.isDefaultColumn());
 			if (formChoiceDTO.isCorrect()) {
@@ -1312,8 +1317,8 @@ public class FormServiceImpl implements FormService {
 				formDao.save(choice);
 			}
 		}
-		if (formLabel.getLabelType().getLabelType().equalsIgnoreCase("quiz_radio")
-				|| formLabel.getLabelType().getLabelType().equalsIgnoreCase("quiz_checkbox")) {
+		if (formLabel.getLabelType() != null && (formLabel.getLabelType().getLabelType().equalsIgnoreCase("quiz_radio")
+				|| formLabel.getLabelType().getLabelType().equalsIgnoreCase("quiz_checkbox"))) {
 			if (count == 0) {
 				response.setStatusCode(400);
 				response.setMessage("Default answer is mandatory");

@@ -61,6 +61,7 @@ public class LeadController {
 		} finally {
 			if (response.getStatusCode() == 200) {
 				leadDto.setId((Integer) response.getData());
+				asyncComponent.saveAndPushLeadToxAmplify(leadDto);
 				asyncComponent.sendLeadAddedOrUpdatedEmailToPartner(leadDto, false);
 			}
 		}
@@ -76,6 +77,7 @@ public class LeadController {
 			throw new XamplifyDataAccessException(e);
 		} finally {
 			if (response.getStatusCode() == 200) {
+				asyncComponent.updateAndPushLeadToxAmplify(leadDto);
 				asyncComponent.sendLeadAddedOrUpdatedEmailToPartner(leadDto, true);
 			}
 		}
@@ -308,6 +310,7 @@ public class LeadController {
 		return response;
 	}
 	
+	@SuppressWarnings("rawtypes")
 	@GetMapping(value = "crm/active/{opportunityType}/custom/form/{companyId}/{opportunityId}/{loggedInUserId}")
 	public ResponseEntity getActiveCRMCustomForm(@PathVariable Integer companyId, @PathVariable Integer opportunityId,
 			@PathVariable Integer loggedInUserId,
@@ -316,6 +319,28 @@ public class LeadController {
 		response = ResponseEntity.ok(integrationWrapperService.getActiveCRMCustomForm(companyId, opportunityId,
 				loggedInUserId, opportunityType));
 		return response;
+	}
+	
+	@SuppressWarnings("rawtypes")
+	@GetMapping(value = "/sync/custom-form/{userId}")
+	public ResponseEntity syncCustomForm(@PathVariable Integer userId) {
+		return ResponseEntity.ok(leadService.saveLeadCustomFormFromMcp(userId));
+	}
+	
+	@SuppressWarnings("rawtypes")
+	@GetMapping(value = "/sync/pipeline/{userId}")
+	public ResponseEntity saveLeadPipelinesFromMcp(@PathVariable Integer userId) {
+		return ResponseEntity.ok(leadService.saveLeadPipelinesFromMcp(userId));
+	}
+	
+	@GetMapping("/sync/{userId}")
+	public ResponseEntity<XtremandResponse> syncLeads(@PathVariable Integer userId) {
+		return ResponseEntity.ok(leadService.syncLeads(userId));
+	}
+	
+	@GetMapping("/sync/details/{userId}")
+	public ResponseEntity<XtremandResponse> syncWithXamplify(@PathVariable Integer userId) {
+		return ResponseEntity.ok(leadService.syncDetailsWithXamplify(userId));
 	}
 
 }

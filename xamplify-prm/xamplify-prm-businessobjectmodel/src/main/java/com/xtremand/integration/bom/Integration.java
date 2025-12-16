@@ -190,6 +190,18 @@ public class Integration extends XamplifyTimeStamp {
 
 	@Column(name = "can_partner_delete_lead")
 	private boolean partnerDeleteLead = true;
+	
+	@Column(name = "xamp_user_name")
+	private String xAmpUserName;
+	
+	@Column(name = "xamp_user_email")
+	private String xAmpUserEmail;
+	
+	@Column(name = "xamp_user_organization")
+	private String xAmpUserOrganization;
+	
+	@Column(name = "xamp_crm_type")
+	private String xAmpCrmType;
 
 	/* XNFR-615 */
 
@@ -197,7 +209,7 @@ public class Integration extends XamplifyTimeStamp {
 	private boolean firstIntegration;
 
 	public enum IntegrationType {
-		XAMPLIFY("xamplify");
+		XAMPLIFY("xamplify"), CUSTOM_CRM("custom_crm");
 
 		protected String type;
 

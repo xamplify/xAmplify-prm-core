@@ -2851,7 +2851,7 @@ public class HibernateUserDAO implements UserDAO {
 				+ "cp.website AS \"website\", cp.instagram_link AS \"instagramUrl\", cp.twitter_link AS \"twitterUrl\", cp.facebook_link AS \"facebookLink\", "
 				+ "cp.linked_in_link AS \"linkedInLink\", cp.google_plus_link AS \"googlePlusLink\", cp.event_url AS \"eventUrl\", cp.about_us AS \"aboutUs\", "
 				+ "CONCAT(cp.street, ', ', cp.city, ', ', cp.state, ', ', cp.zip, ', ', cp.country) AS \"senderCompanyAddress\", cp.privacy_policy AS \"privacyPolicy\", "
-				+ "u.job_title AS \"jobTitle\", u.mobile_number AS \"mobileNumber\",cp.phone as \"senderCompanyContactNumber\" FROM xt_user_profile u "
+				+ "u.job_title AS \"jobTitle\", u.mobile_number AS \"mobileNumber\",cp.phone as \"senderCompanyContactNumber\",cp.company_id as \"companyId\" FROM xt_user_profile u "
 				+ "JOIN xt_company_profile cp ON u.company_id = cp.company_id WHERE u.user_id = :userId";
 		hibernateSQLQueryResultRequestDTO.setQueryString(queryString);
 		hibernateSQLQueryResultRequestDTO.getQueryParameterDTOs().add(new QueryParameterDTO("userId", userId));

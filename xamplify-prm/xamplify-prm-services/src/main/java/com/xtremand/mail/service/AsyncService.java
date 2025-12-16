@@ -82,6 +82,7 @@ import com.xtremand.dashboard.buttons.dto.DashboardButtonsPartnersDTO;
 import com.xtremand.dashboard.buttons.dto.DashboardButtonsToPartnersDTO;
 import com.xtremand.deal.dao.DealDAO;
 import com.xtremand.deal.dto.DealDto;
+import com.xtremand.deal.service.DealService;
 import com.xtremand.domain.dao.DomainDao;
 import com.xtremand.domain.dto.DomainMediaResourceDTO;
 import com.xtremand.exception.EmailNotificationException;
@@ -112,6 +113,7 @@ import com.xtremand.highlevel.analytics.bom.DownloadStatus;
 import com.xtremand.highlevel.analytics.dto.DownloadRequestUserDetailsDTO;
 import com.xtremand.lead.dao.LeadDAO;
 import com.xtremand.lead.dto.LeadDto;
+import com.xtremand.lead.service.LeadService;
 import com.xtremand.lms.bom.LearningTrack;
 import com.xtremand.lms.bom.LearningTrackContent;
 import com.xtremand.lms.bom.LearningTrackType;
@@ -590,6 +592,12 @@ public class AsyncService {
 
 	@Autowired
 	private WorkflowService workflowService;
+	
+	@Autowired
+	private LeadService leadService;
+	
+	@Autowired
+    private DealService dealService;
 
 	public void sendPartnerMail(User user, int templateId, User customer, Integer userListId) {
 		EmailTemplate template = genericDAO.get(EmailTemplate.class, templateId);
@@ -4883,6 +4891,26 @@ public class AsyncService {
 
 	public void saveCompanyDomainColors(CompanyProfile companyProfile) {
 		utilService.saveDomainColors(companyProfile); /*** XNFR-1013 ***/
+	}
+	
+	public void saveAndPushLeadToxAmplify(LeadDto leadDto) {
+		leadService.saveAndPushLeadToxAmplify(leadDto);
+	}
+	
+	public void saveAndPushDealToxAmplify(DealDto dealDto) {
+		dealService.saveAndPushDealToxAmplify(dealDto);
+	}
+	
+	public void updateAndPushLeadToxAmplify(LeadDto leadDto) {
+		leadService.updateAndPushLeadToxAmplify(leadDto);
+	}
+
+	public void updateAndPushDealToxAmplify(DealDto dealDto) {
+		dealService.updateAndPushDealToxAmplify(dealDto);
+	}
+	
+	public void updateDealStatusToxAmplify(DealDto dealDto) {
+		dealService.updateDealStatusToxAmplify(dealDto);
 	}
 
 }

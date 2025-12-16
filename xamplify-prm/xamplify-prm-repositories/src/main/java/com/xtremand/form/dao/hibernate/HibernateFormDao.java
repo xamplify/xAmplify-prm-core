@@ -61,6 +61,9 @@ import com.xtremand.user.dao.UserDAO;
 import com.xtremand.util.DateUtils;
 import com.xtremand.util.PaginationUtil;
 import com.xtremand.util.XamplifyUtils;
+import com.xtremand.util.dao.HibernateSQLQueryResultUtilDao;
+import com.xtremand.util.dto.HibernateSQLQueryResultRequestDTO;
+import com.xtremand.util.dto.QueryParameterDTO;
 import com.xtremand.util.dto.XamplifyConstants;
 import com.xtremand.white.labeled.dao.WhiteLabeledFormDao;
 import com.xtremand.white.labeled.dto.WhiteLabeledContentDTO;
@@ -130,6 +133,9 @@ public class HibernateFormDao implements FormDao {
 
 	@Value("${web_url}")
 	private String webUrl;
+	
+	@Autowired
+	private HibernateSQLQueryResultUtilDao hibernateSQLQueryResultUtilDao;
 
 	@Override
 	public void save(Form form) {
@@ -146,15 +152,21 @@ public class HibernateFormDao implements FormDao {
 	@SuppressWarnings("unchecked")
 	@Override
 	public List<String> listFormNamesByCompanyId(Integer userId, String companyProfileName) {
-		String query = "select LOWER(TRIM(form_name)) from xt_form where company_id=:companyId";
-		Integer companyId = userDao.getCompanyIdByUserId(userId);
-		if (companyId != null) {
-			return sessionFactory.getCurrentSession().createSQLQuery(query)
-					.setParameter(XamplifyConstants.COMPANY_ID, companyId).list();
-		} else {
-			return Collections.emptyList();
-		}
+//		String query = "select LOWER(TRIM(form_name)) from xt_form where company_id=:companyId";
+//		Integer companyId = userDao.getCompanyIdByUserId(userId);
+//		if (companyId != null) {
+//			return sessionFactory.getCurrentSession().createSQLQuery(query)
+//					.setParameter(XamplifyConstants.COMPANY_ID, companyId).list();
+//		} else {
+//			return Collections.emptyList();
+//		}
 
+		HibernateSQLQueryResultRequestDTO dto = new HibernateSQLQueryResultRequestDTO();
+		String queryString = "select LOWER(TRIM(form_name)) from xt_form f join xt_user_profile up"
+				+ " on f.company_id = up.company_id where up.user_id=:userId";
+		dto.setQueryString(queryString);
+		dto.getQueryParameterDTOs().add(new QueryParameterDTO("userId", userId));
+		return (List<String>) hibernateSQLQueryResultUtilDao.returnList(dto);
 	}
 
 	@Override

@@ -119,4 +119,13 @@ public class DealDto {
 	private String contactEmailId;
 	private String accountSubType;
 	private String partnerType;
+	
+	private Integer dealId;
+	private String externalPipelineId;
+    private String externalPipelineStageId;
+    private String pipelineName;
+    private String pipelineStageName;
+    private Integer partnerCompanyId;
+    private LeadDto leadDto;
+    private UserDTO contactDto;
 }

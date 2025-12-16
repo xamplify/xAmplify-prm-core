@@ -1,7 +1,10 @@
 package com.xtremand.integration.dto;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
+
+import javax.persistence.Column;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.xtremand.integration.bom.FormColumnLayoutTypeEnum;
@@ -74,4 +77,10 @@ public class IntegrationDTO {
 	/**XNFR-693**/
 	private boolean partnerEditLead = true;
 	private boolean partnerDeleteLead = true;
+	private String pat;
+	private String xAmpUserName;
+	private String xAmpUserEmail;
+	private String xAmpUserOrganization;
+	private String xAmpCrmType;
+	private Date updatedDate;
 }

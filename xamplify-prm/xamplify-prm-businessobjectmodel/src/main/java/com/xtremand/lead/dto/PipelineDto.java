@@ -30,4 +30,5 @@ public class PipelineDto {
 	private boolean isCrmPipeline = false;
 	private boolean enablePrivateCheckBox = false;
 	private boolean showSinglePublicPipelineMessage = false;
+	private String externalPipelineId;
 }

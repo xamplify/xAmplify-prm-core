@@ -8,8 +8,10 @@ import com.xtremand.integration.bom.Integration.IntegrationType;
 import com.xtremand.lead.bom.Pipeline;
 import com.xtremand.lead.bom.PipelineStage;
 import com.xtremand.lead.bom.PipelineType;
+import com.xtremand.lead.dto.PipelineDto;
 import com.xtremand.lead.dto.PipelineRequestDTO;
 import com.xtremand.lead.dto.PipelineResponseDTO;
+import com.xtremand.lead.dto.PipelineStageDto;
 import com.xtremand.lead.dto.PipelineStageResponseDTO;
 
 public interface PipelineDAO {
@@ -45,7 +47,7 @@ public interface PipelineDAO {
 			IntegrationType integrationType);
 
 	public PipelineStage getPipelineStageByExternalPipelineStageId(Integer companyId, Integer pipelineId,
-			String externalPipelineStageId);
+			String externalPipelineStageId, String stageName);
 
 	public PipelineStage getDefaultStage(Integer pipelineId);
 
@@ -74,5 +76,22 @@ public interface PipelineDAO {
 	public String getTicketTypeIdFromCampaignByCampaignId(Integer campaignId);
 	
 	public List<PipelineResponseDTO> findPipelineForCRMSettings(PipelineRequestDTO pipelineRequestDTO, Integer companyId);
+
+	public Pipeline getLeadPipelineByExternalPipelineId(Integer id, String externalPipelineId,
+			IntegrationType integrationType);
+	
+	public void reassignLeadPipelines(List<Pipeline> pipelinesToRemove, Pipeline targetPipeline);
+
+    public PipelineStage findFallbackStage(Integer pipelineId);
+    
+    public void reassignDealPipelines(List<Pipeline> pipelinesToRemove, Pipeline targetPipeline);
+    
+    public void deletePipelineStages(List<Pipeline> pipelinesToRemove);
+    
+    public void deletePipelines(List<Pipeline> pipelinesToRemove);
+    
+    PipelineDto fetchPipelineDetailsByPipelineId(Integer pipelineId);
+    
+    PipelineStageDto fetchPipelineStageDetailsByPipelineStageId(Integer pipelineStageId);
 
 }

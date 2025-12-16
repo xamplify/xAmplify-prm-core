@@ -158,5 +158,5 @@ public class LeftSideNavigationBarItem {
 
 	/** XNFR-979 **/
 	private boolean insights;
-
+	
 }

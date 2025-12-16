@@ -59,5 +59,7 @@ public interface IntegrationDao {
 	public IntegrationSettingsDTO isSelfDealByVendor(Integer companyId);
 
 	public boolean hasActiveCRMIntegration(Integer companyId);
+	
+	String fetchActiveIntegrationPAT(Integer companyId);
 
 }

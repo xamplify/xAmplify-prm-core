@@ -100,5 +100,7 @@ public interface LeadDAO {
 	void getUserUserDetailsForLead(LeadDto leadDto, Integer partnerId, Integer vendorId);
 
 	ModuleAccess getCompanyAccess(Integer companyId);
+	
+	List<Lead> findLeadsByCreatedForCompanyId(Integer createdForCompanyId);
 
 }
