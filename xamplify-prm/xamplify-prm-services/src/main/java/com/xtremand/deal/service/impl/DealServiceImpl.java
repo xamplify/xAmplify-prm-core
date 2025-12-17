@@ -2981,6 +2981,7 @@ public class DealServiceImpl implements DealService {
 			baseUrl = baseUrl + "/";
 		}
 		String url = baseUrl + "deal/create";
+		LOGGER.info("Deal create URL: " + url);
 //		String url = "http://localhost:8080/deal/create";
 
 		HttpHeaders headers = new HttpHeaders();
@@ -2998,6 +2999,7 @@ public class DealServiceImpl implements DealService {
 
 			HttpStatus status = response.getStatusCode();
 			if (status.is2xxSuccessful()) {
+				LOGGER.info("Response body: " + response.getBody());
 				return response.getBody();
 			} else if (status == HttpStatus.UNAUTHORIZED) {
 				throw new XamplifyDataAccessException("Received 401 Unauthorized calling createPRMDeal at URL: " + url);
@@ -3231,6 +3233,7 @@ public class DealServiceImpl implements DealService {
 			baseUrl = baseUrl + "/";
 		}
 		String url = baseUrl + "deal/update";
+		LOGGER.info("Deal update URL: " + url);
 //		String url = "http://localhost:8080/deal/update";
 
 		HttpHeaders headers = new HttpHeaders();
@@ -3249,6 +3252,7 @@ public class DealServiceImpl implements DealService {
 			HttpStatus status = response.getStatusCode();
 
 			if (status.is2xxSuccessful()) {
+				LOGGER.info("Response body: " + response.getBody());
 				return response.getBody();
 			} else if (status == HttpStatus.UNAUTHORIZED) {
 				throw new XamplifyDataAccessException("Received 401 Unauthorized calling updatePRMDeal at URL: " + url);
@@ -3326,6 +3330,7 @@ public class DealServiceImpl implements DealService {
 			baseUrl = baseUrl + "/";
 		}
 		String url = baseUrl + "deal/status/update";
+		LOGGER.info("Deal status update URL: " + url);
 //		String url = "http://localhost:8080/deal/status/update";
 
 		HttpHeaders headers = new HttpHeaders();
@@ -3339,7 +3344,7 @@ public class DealServiceImpl implements DealService {
 		try {
 			ResponseEntity<Void> response = restTemplate.exchange(url, HttpMethod.POST, requestEntity, Void.class);
 			HttpStatus status = response.getStatusCode();
-
+			LOGGER.info("Response status code: " + response.getStatusCode());
 			if (!status.is2xxSuccessful()) {
 				throw new XamplifyDataAccessException(
 						"Unexpected status " + status.value() + " calling updateDealStatus at URL: " + url);
@@ -3425,6 +3430,7 @@ public class DealServiceImpl implements DealService {
 		}
 
 		String url = baseUrl + "deal/getById/" + openSourceDealId.trim();
+		LOGGER.info("Deal sync by Id URL: " + url);
 //		String url = "http://localhost:8080/deal/getById/" + openSourceDealId.trim();
 		HttpHeaders headers = new HttpHeaders();
 		headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));

@@ -2793,6 +2793,7 @@ public class LeadServiceImpl implements LeadService {
 		}
 	    String url = baseUrl + "lead/create";
 //		String url = "http://localhost:8080/lead/create";
+	    LOGGER.info("Lead Create URL: " + url);
 
 	    HttpHeaders headers = new HttpHeaders();
 	    headers.set(HttpHeaders.AUTHORIZATION, BEARER + patToken.trim());
@@ -2813,6 +2814,7 @@ public class LeadServiceImpl implements LeadService {
 	        HttpStatus status = response.getStatusCode();
 
 	        if (status.is2xxSuccessful()) {
+	        	LOGGER.info("Response body from lead creation: " + response.getBody());
 	            return response.getBody();
 	        } else if (status == HttpStatus.UNAUTHORIZED) {
 	            throw new XamplifyDataAccessException("Received 401 Unauthorized calling createPRMLead at URL: " + url);
@@ -3447,6 +3449,7 @@ public class LeadServiceImpl implements LeadService {
 			baseUrl = baseUrl + "/";
 		}
 		String url = baseUrl + "lead/update";
+		LOGGER.info("Lead Update URL: " + url);
 
 		HttpHeaders headers = new HttpHeaders();
 		headers.set(HttpHeaders.AUTHORIZATION, BEARER + patToken.trim());
@@ -3464,6 +3467,7 @@ public class LeadServiceImpl implements LeadService {
 			HttpStatus status = response.getStatusCode();
 
 			if (status.is2xxSuccessful()) {
+				LOGGER.info("Response body: " + response.getBody());
 				return response.getBody();
 			} else if (status == HttpStatus.UNAUTHORIZED) {
 				throw new XamplifyDataAccessException("Received 401 Unauthorized calling updatePRMLead at URL: " + url);
@@ -3556,6 +3560,7 @@ public class LeadServiceImpl implements LeadService {
 		}
 
 		String url = baseUrl + "lead/getById/" + openSourceLeadId.trim();
+		LOGGER.info("Lead sync by Id URL: " + url);
 //		String url = "http://localhost:8080/lead/getById/" + openSourceLeadId.trim();
 		HttpHeaders headers = new HttpHeaders();
 		headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
