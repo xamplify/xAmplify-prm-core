@@ -2774,7 +2774,6 @@ public class LeadServiceImpl implements LeadService {
 			baseUrl = baseUrl + "/";
 		}
 		return baseUrl + "lead/custom-form";
-//		return "http://localhost:8080/lead/custom-form";
 	}
 	
 	private Map<String, Object> createPrmLead(String patToken, LeadDto leadDto) throws XamplifyDataAccessException {
@@ -2790,7 +2789,6 @@ public class LeadServiceImpl implements LeadService {
 			baseUrl = baseUrl + "/";
 		}
 	    String url = baseUrl + "lead/create";
-//		String url = "http://localhost:8080/lead/create";
 	    LOGGER.info("Lead Create URL: " + url);
 
 	    HttpHeaders headers = new HttpHeaders();
@@ -3559,7 +3557,6 @@ public class LeadServiceImpl implements LeadService {
 
 		String url = baseUrl + "lead/getById/" + openSourceLeadId.trim();
 		LOGGER.info("Lead sync by Id URL: " + url);
-//		String url = "http://localhost:8080/lead/getById/" + openSourceLeadId.trim();
 		HttpHeaders headers = new HttpHeaders();
 		headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
 		if (StringUtils.isNotBlank(xAmplifyPat)) {

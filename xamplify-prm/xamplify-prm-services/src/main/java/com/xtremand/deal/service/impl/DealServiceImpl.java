@@ -2765,7 +2765,6 @@ public class DealServiceImpl implements DealService {
 			baseUrl = baseUrl + "/";
 		}
 		return baseUrl + "deal/custom-form";
-//		return "http://localhost:8080/deal/custom-form";
 	}
 
 	private String buildMcpDealPipelinesUrl() {
@@ -2773,7 +2772,6 @@ public class DealServiceImpl implements DealService {
 			baseUrl = baseUrl + "/";
 		}
 		return baseUrl + "deal/pipelines";
-//		return "http://localhost:8080/deal/pipelines";
 	}
 
 	private Pipeline upsertDealPipeline(CompanyProfile companyProfile, Integer adminId, IntegrationType integrationType,
@@ -2982,7 +2980,6 @@ public class DealServiceImpl implements DealService {
 		}
 		String url = baseUrl + "deal/create";
 		LOGGER.info("Deal create URL: " + url);
-//		String url = "http://localhost:8080/deal/create";
 
 		HttpHeaders headers = new HttpHeaders();
 		headers.set(HttpHeaders.AUTHORIZATION, BEARER + patToken.trim());
@@ -3234,7 +3231,6 @@ public class DealServiceImpl implements DealService {
 		}
 		String url = baseUrl + "deal/update";
 		LOGGER.info("Deal update URL: " + url);
-//		String url = "http://localhost:8080/deal/update";
 
 		HttpHeaders headers = new HttpHeaders();
 		headers.set(HttpHeaders.AUTHORIZATION, BEARER + patToken.trim());
@@ -3331,7 +3327,6 @@ public class DealServiceImpl implements DealService {
 		}
 		String url = baseUrl + "deal/status/update";
 		LOGGER.info("Deal status update URL: " + url);
-//		String url = "http://localhost:8080/deal/status/update";
 
 		HttpHeaders headers = new HttpHeaders();
 		headers.set(HttpHeaders.AUTHORIZATION, BEARER + xAmplifyPat.trim());
@@ -3431,7 +3426,6 @@ public class DealServiceImpl implements DealService {
 
 		String url = baseUrl + "deal/getById/" + openSourceDealId.trim();
 		LOGGER.info("Deal sync by Id URL: " + url);
-//		String url = "http://localhost:8080/deal/getById/" + openSourceDealId.trim();
 		HttpHeaders headers = new HttpHeaders();
 		headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
 		if (StringUtils.isNotBlank(xAmplifyPat)) {

@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html charset=UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+</head>
+<body style="font-family: Century Gothic; background-color: #fff;">
+	<table width="100%" cellpadding="0" cellspacing="0" border="0">
+		<tbody>
+			<tr>
+				<td align="center" style="background-color: #fff;">
+					<table width="600" cellpadding="0" cellspacing="0" border="0"
+						style="border: 1px solid #dedede;">
+						<tbody>
+							<tr>
+								<td style="background-color: rgb(255, 255, 255);">
+									<table width="100%" cellpadding="0" cellspacing="0" border="0">
+										<tbody>
+											<tr>
+												<td align="center" style="padding: 46px 0 0 0;"><a
+													href="https://xamplify.io/login" style="color: inherit;"
+													target="_blank"> <img
+														src="https://xamplify.io/assets/images/xamplify-logo.png"
+														alt="https://xamplify.io/assets/images/xamplify-logo.png"
+														width="145" align="center"/>
+												</a></td>
+											</tr>
+											<tr>
+												<td
+													style="font-family: Century Gothic; font-size: 14px; line-height: 36px; padding: 40px 90px 0px 90px;">
+													Hi <span th:text="${PARTNER_FIRST_NAME}"></span>,</td>
+											</tr>
+											<tr>
+												<td
+													style="padding: 10px 90px; font-family: Century Gothic; font-size: 14px; line-height: 20px;">
+													We’ve got an update on a deal that you registered with
+													<span th:text="${VENDOR_COMPANY_NAME}"></span>.</td>
+											</tr>
+											<tr>
+												<td
+													style="padding: 10px 90px; font-family: Century Gothic; font-size: 14px; line-height: 20px;">
+													Lead: <span style="font-weight: 600"><span th:text="${LEAD_COMPANY_NAME}"></span>
+												</span><br/> Campaign Name: <span style="font-weight: 600"><span th:text="${CAMPAIGN_NAME}"></span>
+												</span><br/> Deal Title: <span style="font-weight: 600"><span th:text="${DEAL_TITLE}"></span>
+												</span><br/> Status: <span style="font-weight: 600"><span th:text="${DEAL_STATUS}"></span></span><br/>
+													Comment: <span style="font-weight: 600"><span th:text="${DEAL_COMMENT}"></span></span>
+												</td>
+											</tr>
+											<tr>
+												<td
+													style="padding: 10px 90px; font-family: Century Gothic; font-size: 14px; line-height: 20px;">
+													Log in to review this deal. <br/>
+												<br/>
+												</td>
+											</tr>
+											<tr>
+												<td style="padding: 10px 90px 0 230px;">
+													<table cellpadding="0" cellspacing="0" border="0">
+														<tbody>
+															<tr>
+																<td
+																	style="padding: 5px 40px; background-color: #0943e5;">
+																	<a href="${LOGIN_LINK}"
+																	style="font-family: Century Gothic; font-size: 14px; text-align: center; color: rgb(255, 255, 255); line-height: 24px; text-decoration: none; letter-spacing: 0.025em;"
+																	target="_blank">Login</a>
+																</td>
+															</tr>
+														</tbody>
+													</table>
+												</td>
+											</tr>
+											<tr>
+												<td
+													style="font-family: Century Gothic; font-size: 14px; padding: 20px 90px 90px 90px;">
+													<br/> Until next time,<br/> The xAmplify Team
+												</td>
+											</tr>
+										</tbody>
+									</table>
+								</td>
+							</tr>
+						</tbody>
+					</table>
+				</td>
+			</tr>
+		</tbody>
+	</table>
+</body>
+</html>
