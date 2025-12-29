@@ -1670,10 +1670,6 @@ public class IntegrationWrapperServiceImpl implements IntegrationWrapperService 
 		}
 
 		saveCustomCrmIntegration(companyId, pat, userId, contextResponse);
-		leadService.saveLeadCustomFormFromMcp(userId);
-        leadService.saveLeadPipelinesFromMcp(userId);
-        dealService.saveDealCustomFormFromMcp(userId);
-        dealService.saveDealPipelinesFromMcp(userId);
 		response.setStatusCode(HttpStatus.OK.value());
 		response.setMessage("PAT validated successfully.");
 		response.setData(contextResponse);

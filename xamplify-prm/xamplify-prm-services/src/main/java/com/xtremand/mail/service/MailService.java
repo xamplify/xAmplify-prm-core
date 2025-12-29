@@ -1124,28 +1124,49 @@ public abstract class MailService {
 				Arrays.asList(new Criteria("userId", OPERATION_NAME.eq, deal.getCreatedBy())),
 				new FindLevel[] { FindLevel.COMPANY_PROFILE });
 
-		EmailTemplate template = genericDao.get(EmailTemplate.class, 42);
-		String body = template.getBody();
-		body = body.replaceAll("PARTNER_FIRST_NAME", getUserName(createdUser));
-		body = body.replaceAll("VENDOR_COMPANY_NAME",
-				XamplifyUtils.escapeDollarSequece(deal.getCreatedForCompany().getCompanyName()));
-		body = body.replaceAll("DEAL_TITLE", XamplifyUtils.escapeDollarSequece(deal.getTitle()));
-		body = body.replaceAll("DEAL_STATUS", deal.getCurrentStage().getStageName());
+//		EmailTemplate template = genericDao.get(EmailTemplate.class, 42);
+//		String body = template.getBody();
+//		body = body.replaceAll("PARTNER_FIRST_NAME", getUserName(createdUser));
+//		body = body.replaceAll("VENDOR_COMPANY_NAME",
+//				XamplifyUtils.escapeDollarSequece(deal.getCreatedForCompany().getCompanyName()));
+//		body = body.replaceAll("DEAL_TITLE", XamplifyUtils.escapeDollarSequece(deal.getTitle()));
+//		body = body.replaceAll("DEAL_STATUS", deal.getCurrentStage().getStageName());
 		String dealComment = ((deal.getDealComment() != null || deal.getDealComment() != "") ? deal.getDealComment()
 				: "---");
-		body = body.replaceAll("DEAL_COMMENT", dealComment);// XNFR-426
-		body = body.replaceAll("LOGIN_LINK", webUrl + "/login");
-
+//		body = body.replaceAll("DEAL_COMMENT", dealComment);// XNFR-426
+//		body = body.replaceAll("LOGIN_LINK", webUrl + "/login");
+//
+//		if (deal.getAssociatedLead() != null) {
+//			body = body.replaceAll("LEAD_COMPANY_NAME",
+//					XamplifyUtils.escapeDollarSequece(deal.getAssociatedLead().getCompany()));
+//		} else {
+//			body = body.replaceAll("LEAD_COMPANY_NAME", "---");
+//		}
+//		body = body.replaceAll("CAMPAIGN_NAME", "---");
+		
+		Context context = new Context();
+		Map<String, Object> model = new HashMap<>();
+		model.put("PARTNER_FIRST_NAME", getUserName(createdUser));
+		model.put("VENDOR_COMPANY_NAME",
+				XamplifyUtils.escapeDollarSequece(deal.getCreatedForCompany().getCompanyName()));
+		model.put("DEAL_TITLE", XamplifyUtils.escapeDollarSequece(deal.getTitle()));
+		model.put("DEAL_STATUS", deal.getCurrentStage().getStageName());
+		model.put("DEAL_COMMENT", dealComment);
+		model.put("LOGIN_LINK", webUrl + "/login");
 		if (deal.getAssociatedLead() != null) {
-			body = body.replaceAll("LEAD_COMPANY_NAME",
+			model.put("LEAD_COMPANY_NAME",
 					XamplifyUtils.escapeDollarSequece(deal.getAssociatedLead().getCompany()));
 		} else {
-			body = body.replaceAll("LEAD_COMPANY_NAME", "---");
+			model.put("LEAD_COMPANY_NAME", "---");
 		}
-		body = body.replaceAll("CAMPAIGN_NAME", "---");
-		String subject = utilService.addPerfixToSubject(template.getSubject());
+		model.put("CAMPAIGN_NAME", "---");
+		context.setVariables(model);
+		String html = "";
+		html = templateEngine.process("updateDealStatus", context);
+		
+		String subject = utilService.addPerfixToSubject("Deal status update");
 		mailService.sendMail(new EmailBuilder().from(email).senderName(mailSender).to(createdUser.getEmailId())
-				.subject(subject).body(body).build());
+				.subject(subject).body(html).build());
 
 	}
 

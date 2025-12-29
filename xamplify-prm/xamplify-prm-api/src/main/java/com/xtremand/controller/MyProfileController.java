@@ -20,6 +20,7 @@ import com.xtremand.integration.bom.Integration.IntegrationType;
 import com.xtremand.integration.dto.CustomCrmValidationRequestDto;
 import com.xtremand.integration.service.IntegrationWrapperService;
 import com.xtremand.lead.service.LeadService;
+import com.xtremand.util.XamplifyUtils;
 
 @RestController
 @RequestMapping(value = "/myProfile/")
@@ -45,11 +46,19 @@ public class MyProfileController {
 
             if (status.is2xxSuccessful()) {
             	Integer userId = requestDto.getUserId();
+            	leadService.saveLeadCustomFormFromMcp(userId);
+                leadService.saveLeadPipelinesFromMcp(userId);
+                dealService.saveDealCustomFormFromMcp(userId);
+                dealService.saveDealPipelinesFromMcp(userId);
             } else {
             	String dataString = (String) response.getData();
-            	JSONObject data = new JSONObject(dataString);
-            	if (data.has("error") && data.has("error_description")) {
-            		response.setMessage(data.getString("error_description"));
+            	if (XamplifyUtils.isValidString(dataString)) {
+            		JSONObject data = new JSONObject(dataString);
+                	if (data.has("error") && data.has("error_description")) {
+                		response.setMessage(data.getString("error_description"));
+                	}
+            	} else {
+            		response.setMessage("Oops! something went wrong.");
             	}
             }
 
