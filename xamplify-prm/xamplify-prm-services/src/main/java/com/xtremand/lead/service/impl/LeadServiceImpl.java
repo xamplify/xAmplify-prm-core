@@ -3207,7 +3207,12 @@ public class LeadServiceImpl implements LeadService {
 		dto.setLabelType(labelType.toLowerCase());
 		dto.setOrder(order);
 		dto.setColumnOrder(order);
-		dto.setRequired(false);
+		if ("Last_Name".equals(leadField.getLabelId()) || "Company".equals(leadField.getLabelId())
+				|| "Email".equals(leadField.getLabelId())) {
+			dto.setRequired(true);
+		} else {
+			dto.setRequired(false);
+		}
 		dto.setActive(true);
 		if (existingLabel != null) {
 			dto.setId(existingLabel.getId());
