@@ -206,7 +206,7 @@ public class LeadServiceImpl implements LeadService {
 	private UtilDao utilDao;
 
 	@Autowired
-	PipelineDAO pipelineDAO;
+	private PipelineDAO pipelineDAO;
 
 	/**** XNFR-426 *****/
 	@Autowired
@@ -2848,10 +2848,12 @@ public class LeadServiceImpl implements LeadService {
 					leadDto.setCreatedByEmail(userDTO.getEmailId());
 					leadDto.setCreatedByName(userDTO.getFullName());
 					leadDto.setLeadId(leadDto.getId());
-					leadDto.setExternalPipelineId(leadDto.getCreatedForPipelineId() + "");
-					leadDto.setExternalPipelineStageId(leadDto.getCreatedForPipelineStageId() + "");
-					leadDto.setPipelineName(leadDto.getCreatedForPipeline());
-					leadDto.setPipelineStageName(leadDto.getCreatedForPipelineStage());
+					PipelineDto pipelineDto = pipelineDAO.fetchPipelineDetailsByPipelineId(leadDto.getCreatedForPipelineId());
+					PipelineStageDto pipelineStageDto = pipelineDAO.fetchPipelineStageDetailsByPipelineStageId(leadDto.getCreatedForPipelineStageId());
+					leadDto.setExternalPipelineId(pipelineDto.getExternalPipelineId());
+					leadDto.setExternalPipelineStageId(pipelineStageDto.getExternalPipelineStageId());
+					leadDto.setPipelineName(pipelineDto.getName());
+					leadDto.setPipelineStageName(pipelineStageDto.getStageName());
 					createPrmLead(pat, leadDto);
 				}
 			} catch (Exception e) {
