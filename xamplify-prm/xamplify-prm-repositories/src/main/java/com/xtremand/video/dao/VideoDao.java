@@ -57,5 +57,4 @@ public interface VideoDao extends FinderDAO<VideoFile> {
 	public List<String> getTagNamesByVideoId(Integer videoId);
 
 	public void deleteVideoRecordsByIds(List<Integer> ids);
-
 }
