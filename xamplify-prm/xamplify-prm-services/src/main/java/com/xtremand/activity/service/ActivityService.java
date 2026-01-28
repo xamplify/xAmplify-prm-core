@@ -12,4 +12,5 @@ public interface ActivityService {
 	XtremandResponse fetchLogoFromExternalSource(Integer userId);
 	
 	String getLogoFromExternalSourceUsingDomain(String domain);
+	
 }
