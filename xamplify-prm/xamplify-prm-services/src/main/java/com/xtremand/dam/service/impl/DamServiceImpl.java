@@ -1923,7 +1923,7 @@ public class DamServiceImpl implements DamService {
 		damViewDto.setCreatedByAnyApprover(createdByAnyApprover);
 		damViewDto.setJsonBody((String) row[16]);
 		damViewDto.setHtmlBody((String) row[17]);
-		damViewDto.setSlug((String) row[20]);
+		damViewDto.setSlug((String) row[19]);
 		if (XamplifyUtils.isValidString(damViewDto.getAssetPath())
 				&& XamplifyUtils.isValidString(damViewDto.getAssetType()) && damViewDto.getAssetType().equals("pdf")) {
 			String encodedUrl = URLEncoder.encode(damViewDto.getAssetPath(), StandardCharsets.UTF_8.name());
