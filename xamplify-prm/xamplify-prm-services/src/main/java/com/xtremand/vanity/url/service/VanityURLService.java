@@ -1513,10 +1513,10 @@ public class VanityURLService {
 		if (XamplifyUtils.isValidString(companyProfileName) || hasVanityAccess) {
 			template = teamDao.fetchCustomTemplate(46, loggedInUserId);
 			if (template == null) {
-				template = teamDao.fetchDefaultTemplate(46, loggedInUserId);
+				template = teamDao.fetchDefaultTemplate(83, loggedInUserId);
 			}
 		} else {
-			template = teamDao.fetchDefaultTemplate(46, loggedInUserId);
+			template = teamDao.fetchDefaultTemplate(83, loggedInUserId);
 		}
 		prepareTemplateBody(template);
 		return template;

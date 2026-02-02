@@ -71,6 +71,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 				.antMatchers(HttpMethod.POST, "/accessAccount/updatePassword").permitAll()
 				.antMatchers(HttpMethod.GET, "/v_url/**").permitAll()
 				.antMatchers(HttpMethod.GET, "/addDefaultMdfCredit/**").permitAll()
+				.antMatchers(HttpMethod.GET, "/**/api/pdf/proxy/**").permitAll()
 				.antMatchers(HttpMethod.GET, "/validate-captcha/**").permitAll().antMatchers("/url/**").permitAll()
 				.antMatchers("/domain/**").permitAll().antMatchers(HttpMethod.GET, "/**/authorize").permitAll()
 				.antMatchers(HttpMethod.GET, "/findCompanyDetails/**").permitAll()
