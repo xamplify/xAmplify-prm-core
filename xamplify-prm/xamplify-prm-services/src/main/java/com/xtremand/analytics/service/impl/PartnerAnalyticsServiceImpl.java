@@ -333,7 +333,7 @@ public class PartnerAnalyticsServiceImpl implements PartnerAnalyticsService {
 
 	@Override
 	public Map<String, Object> findActivePartnersCount(Integer userId, boolean applyFilter) {
-		Map<String, Object> map = new HashMap<String, Object>();
+		Map<String, Object> map = new HashMap<>();
 		Integer companyId = userDao.getCompanyIdByUserId(userId);
 		map.put("activePartnersCount", partnerAnalyticsDAO.getActivePartnersCount(companyId, applyFilter, userId));
 		return map;
@@ -341,7 +341,7 @@ public class PartnerAnalyticsServiceImpl implements PartnerAnalyticsService {
 
 	@Override
 	public Map<String, Object> findThroughPartnerCampaignsCount(Integer userId, boolean applyFilter) {
-		Map<String, Object> map = new HashMap<String, Object>();
+		Map<String, Object> map = new HashMap<>();
 		Integer companyId = userDao.getCompanyIdByUserId(userId);
 		map.put("throughPartnerCampaignsCount",
 				partnerAnalyticsDAO.getThroughPartnerCampaignsCount(companyId, applyFilter, userId));

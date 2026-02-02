@@ -39,6 +39,5 @@ public class AutoResponseOption {
 	public static final Integer RESPONDED_YES = 30;
 
 	public static final Integer FOLLOW_UP_EMAIL = 33;
-	
 
 }
