@@ -4120,16 +4120,7 @@ public class UtilService {
 			Integer companyId = companyDetailsDTO.getCompanyId();
 			if (XamplifyUtils.isNotEmptyList(companyIds) && companyIds.indexOf(companyId) < 0) {
 				String adminDomain = XamplifyUtils.getEmailDomain(companyDetailsDTO.getEmailId()).trim().toLowerCase();
-				Domain domain = new Domain();
-				domain.setDomainName(adminDomain);
-				CompanyProfile company = new CompanyProfile();
-				company.setId(companyId);
-				domain.setCompany(company);
-				domain.setCreatedUserId(userId);
-				domain.setCreatedTime(new Date());
-				domain.setUpdatedTime(domain.getCreatedTime());
-				domain.setUpdatedUserId(userId);
-				genericDAO.save(domain);
+				setDomainDataAndSave(userId, companyId, adminDomain);
 				String domainAddedSuccessfully = adminDomain + " Added Successfully For " + companyId;
 				logger.debug(domainAddedSuccessfully);
 			} else {
@@ -4147,6 +4138,19 @@ public class UtilService {
 		response.setStatusCode(200);
 		response.setMessage("Domains Added Successfully");
 		return response;
+	}
+
+	private void setDomainDataAndSave(Integer userId, Integer companyId, String adminDomain) {
+		Domain domain = new Domain();
+		domain.setDomainName(adminDomain);
+		CompanyProfile company = new CompanyProfile();
+		company.setId(companyId);
+		domain.setCompany(company);
+		domain.setCreatedUserId(userId);
+		domain.setCreatedTime(new Date());
+		domain.setUpdatedTime(domain.getCreatedTime());
+		domain.setUpdatedUserId(userId);
+		genericDAO.save(domain);
 	}
 
 	public boolean setDAMAccess(LeftSideNavigationBarItem leftSideNavigationBarItem, Integer userId,
@@ -5116,6 +5120,12 @@ public class UtilService {
 		} else {
 			baseUrl = HOST;
 		}
+		String endpoint = addProxyEndPoint(assetPath);
+		String proxyUrl = baseUrl + "xamplify-prm-api" + "/api/pdf" + endpoint + "?pdfUrl=" + encodedUrl;
+		return proxyUrl;
+	}
+
+	private String addProxyEndPoint(String assetPath) {
 		String endpoint = "";
 		if (assetPath.endsWith(".csv")) {
 			endpoint = "/convertCsvToPdf";
@@ -5126,8 +5136,7 @@ public class UtilService {
 		} else {
 			endpoint = "/proxy";
 		}
-		String proxyUrl = baseUrl + "xamplify-prm-api" + "/api/pdf" + endpoint + "?pdfUrl=" + encodedUrl;
-		return proxyUrl;
+		return endpoint;
 	}
 
 	public Set<User> filterDeactivatedUserIds(Integer companyId, Set<User> users) {

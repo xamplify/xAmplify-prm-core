@@ -34,7 +34,8 @@ public class HibernateEmailThreadDao implements EmailThreadDao {
 				+ "where created_by = :userId";
 		hibernateSQLQueryResultRequestDTO.setQueryString(sqlQuery);
 		hibernateSQLQueryResultRequestDTO.getQueryParameterDTOs().add(new QueryParameterDTO(USER_ID, userId));
-		return  (List<CallIntegrationDTO>) hibernateSQLQueryResultUtilDao.getListDto(hibernateSQLQueryResultRequestDTO, CallIntegrationDTO.class);
+		return (List<CallIntegrationDTO>) hibernateSQLQueryResultUtilDao.getListDto(hibernateSQLQueryResultRequestDTO,
+				CallIntegrationDTO.class);
 	}
 
 	@Override
@@ -54,25 +55,25 @@ public class HibernateEmailThreadDao implements EmailThreadDao {
 		hibernateSQLQueryResultRequestDTO.getQueryParameterDTOs().add(new QueryParameterDTO(USER_ID, loggedInUser));
 		return (Integer) hibernateSQLQueryResultUtilDao.getUniqueResult(hibernateSQLQueryResultRequestDTO);
 	}
-	
+
 	@Override
 	public void deactivateAllMailIntegrations(Integer userId) {
 		HibernateSQLQueryResultRequestDTO hibernateSQLQueryResultRequestDTO = new HibernateSQLQueryResultRequestDTO();
-	    String sqlQuery = "UPDATE xt_mail_integration SET active = false where created_by= :userId";
-	    hibernateSQLQueryResultRequestDTO.setQueryString(sqlQuery);
+		String sqlQuery = "UPDATE xt_mail_integration SET active = false where created_by= :userId";
+		hibernateSQLQueryResultRequestDTO.setQueryString(sqlQuery);
 		hibernateSQLQueryResultRequestDTO.getQueryParameterDTOs().add(new QueryParameterDTO(USER_ID, userId));
 		hibernateSQLQueryResultUtilDao.updateAndReturnCount(hibernateSQLQueryResultRequestDTO);
 	}
-	
-	
+
 	@Override
 	public CallIntegrationDTO getAuthenticationResources(Integer userId, MailIntegrationTypeEnum type) {
 		HibernateSQLQueryResultRequestDTO hibernateSQLQueryResultRequestDTO = new HibernateSQLQueryResultRequestDTO();
 		String sqlQuery = "select access_token as \"accessToken\", refresh_token as \"refreshToken\", external_email_id as \"externalEmailId\" from xt_mail_integration "
-				+ "where created_by= :userId and type = '"+ type.getType() +"'";
+				+ "where created_by= :userId and type = '" + type.getType() + "'";
 		hibernateSQLQueryResultRequestDTO.setQueryString(sqlQuery);
 		hibernateSQLQueryResultRequestDTO.getQueryParameterDTOs().add(new QueryParameterDTO(USER_ID, userId));
-		return (CallIntegrationDTO) hibernateSQLQueryResultUtilDao.getDto(hibernateSQLQueryResultRequestDTO, CallIntegrationDTO.class);
+		return (CallIntegrationDTO) hibernateSQLQueryResultUtilDao.getDto(hibernateSQLQueryResultRequestDTO,
+				CallIntegrationDTO.class);
 	}
 
 }
