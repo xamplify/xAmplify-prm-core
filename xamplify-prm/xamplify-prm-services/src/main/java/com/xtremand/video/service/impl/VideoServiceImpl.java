@@ -951,19 +951,19 @@ public class VideoServiceImpl implements VideoService {
 			VideoImage videoImage = videoFile.getVideoImage();
 			videoFileDTO.getImageFiles()
 					.add(videoImage.getImage1() != null && videoImage.getImage1().length() > 0
-							? server_path + videoImage.getImage1()
+							? server_path + "/" + videoImage.getImage1()
 							: "");
 			videoFileDTO.getImageFiles()
 					.add(videoImage.getImage2() != null && videoImage.getImage2().length() > 0
-							? server_path + videoImage.getImage2()
+							? server_path + "/" + videoImage.getImage2()
 							: "");
 			videoFileDTO.getImageFiles()
 					.add(videoImage.getImage3() != null && videoImage.getImage3().length() > 0
-							? server_path + videoImage.getImage3()
+							? server_path + "/" + videoImage.getImage3()
 							: "");
-			videoFileDTO.getGifFiles().add(server_path + videoImage.getGif1());
-			videoFileDTO.getGifFiles().add(server_path + videoImage.getGif2());
-			videoFileDTO.getGifFiles().add(server_path + videoImage.getGif3());
+			videoFileDTO.getGifFiles().add(server_path + "/" + videoImage.getGif1());
+			videoFileDTO.getGifFiles().add(server_path + "/" + videoImage.getGif2());
+			videoFileDTO.getGifFiles().add(server_path + "/" + videoImage.getGif3());
 			videoFileDTO.setCategories(getCategories());
 			videoFileDTO.setViews(videoFile.getViews());
 			videoFileDTO.setUploadedUserName(XamplifyUtils.setDisplayName(videoFile.getCustomer()));
