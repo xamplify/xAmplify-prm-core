@@ -2562,7 +2562,7 @@ public class HibernateDamDao implements DamDao {
 			boolean updateApprovalStatus, String approvalStatusTypeInString) {
 		if (XamplifyUtils.isValidInteger(videoFileUploadForm.getDamId())) {
 			String sqlQueryString = "update xt_dam set asset_name=TRIM(:assetName), is_white_labeled_asset_shared_with_partners = :shareAsWhiteLabeledAsset, "
-					+ "updated_by = :updatedBy, is_added_to_quick_links = :addedToQuickLinks {updateApprovalStatusForDraftAssetMergeTag}, slug = TRIM(:slug),  where id = :damId";
+					+ "updated_by = :updatedBy, is_added_to_quick_links = :addedToQuickLinks {updateApprovalStatusForDraftAssetMergeTag}, slug = TRIM(:slug)  where id = :damId";
 
 			if (updateApprovalStatus && XamplifyUtils.isValidString(approvalStatusTypeInString)) {
 				sqlQueryString = sqlQueryString.replace(UPDATE_APPROVAL_STATUS_FOR_DRAFTS_MERGE_TAG,
