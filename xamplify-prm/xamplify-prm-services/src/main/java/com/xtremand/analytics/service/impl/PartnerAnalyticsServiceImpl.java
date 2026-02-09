@@ -2805,5 +2805,12 @@ public class PartnerAnalyticsServiceImpl implements PartnerAnalyticsService {
 		}
 		return response;
 	}
+	
+	@Override
+	public Map<String, Object> getInActivePartnersAnalytics(Pagination pagination) {	
+			Map<String, Object> resultMap = new HashMap<>();
+			resultMap = partnerAnalyticsDAO.listInActiveCampaignPartners(pagination);
+			return resultMap;
+	}
 
 }

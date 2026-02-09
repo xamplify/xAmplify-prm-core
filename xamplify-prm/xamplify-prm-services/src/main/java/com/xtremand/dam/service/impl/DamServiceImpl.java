@@ -150,6 +150,7 @@ import com.xtremand.util.bom.ModuleType;
 import com.xtremand.util.dao.UtilDao;
 import com.xtremand.util.dto.Pageable;
 import com.xtremand.util.dto.PaginatedDTO;
+import com.xtremand.util.dto.PartnerOrContactInputDTO;
 import com.xtremand.util.dto.ShareContentRequestDTO;
 import com.xtremand.util.dto.UserDetailsUtilDTO;
 import com.xtremand.util.dto.UserListAndUserId;
@@ -3552,23 +3553,78 @@ public class DamServiceImpl implements DamService {
 		Integer companyId = userDao.getCompanyIdByUserId(loggedInUserId);
 		return damDao.isVideoIdMatchedByCompanyIdAndVideoId(companyId, videoId);
 	}
+	
+	@Transactional(readOnly = false, propagation = Propagation.REQUIRED, rollbackFor = Exception.class)
+	protected XtremandResponse publishAssetToPartnerCompanyInternal(Integer userListId, Integer partnerUserId,
+			Integer damId, Integer loggedInUserId) {
+
+		XtremandResponse response = new XtremandResponse();
+
+		Integer vendorCompanyId = userListDao.getCompanyIdByUserListId(userListId);
+		Integer partnershipId = partnershipDao.getPartnershipIdByPartnerCompanyUserId(partnerUserId, vendorCompanyId);
+
+		if (!XamplifyUtils.isValidInteger(partnershipId)) {
+			return buildErrorResponse(400, "Partnership is not established.");
+		}
+
+		if (damDao.isAssetPublishedToPartner(damId, userListId, partnerUserId)) {
+			return buildErrorResponse(400, "Asset has already been published.");
+		}
+
+		createDamPartnerWithGroupMappingAndShareAsset(userListId, partnerUserId, damId, loggedInUserId, partnershipId);
+
+		response.setStatusCode(200);
+		response.setMessage("Published successfully.");
+		return response;
+	}
 
 	@Override
 	public XtremandResponse publishAssetToPartnerCompany(Integer userListId, Integer partnerUserId, Integer damId,
 			Integer loggedInUserId) {
-		XtremandResponse response = new XtremandResponse();
-		Integer vendorCompanyId = userListDao.getCompanyIdByUserListId(userListId);
-		Integer partnershipId = partnershipDao.getPartnershipIdByPartnerCompanyUserId(partnerUserId, vendorCompanyId);
-		if (XamplifyUtils.isValidInteger(partnershipId)) {
-			if (damDao.isAssetPublishedToPartner(damId, userListId, partnerUserId)) {
-				return buildErrorResponse(400, "Asset has already been published.");
-			}
-			createDamPartnerWithGroupMappingAndShareAsset(userListId, partnerUserId, damId, loggedInUserId,
-					partnershipId);
-			response.setStatusCode(200);
-			response.setMessage("Published successfully.");
-		} else {
-			return buildErrorResponse(400, "Partnership is not established.");
+
+		XtremandResponse response = publishAssetToPartnerCompanyInternal(userListId, partnerUserId, damId,
+				loggedInUserId);
+
+		if (response == null || response.getStatusCode() != 200) {
+			System.out.println("[EMAIL-FLOW] Publish failed, exiting");
+			return response;
+		}
+
+		/*
+		 * Preview → Share Send single-asset partner email + platform notification
+		 */
+		if (damId != null) {
+
+			ShareContentRequestDTO requestDTO = new ShareContentRequestDTO();
+			requestDTO.setUserListId(userListId);
+			requestDTO.setLoggedInUserId(loggedInUserId);
+
+			// ✅ Set<Integer>
+			requestDTO.setDamIds(Collections.singleton(damId));
+			requestDTO.setPublishingToPartnerList(false);
+
+			Integer companyId = userService.getCompanyIdByUserId(loggedInUserId);
+			Integer partnershipId = partnershipDao.findPartnershipIdByPartnerIdAndVendorCompanyId(partnerUserId,
+					companyId);
+			requestDTO.setPartnershipId(partnershipId);
+
+			User partnerUser = userService.loadUser(partnerUserId);
+
+			PartnerOrContactInputDTO partnerDTO = new PartnerOrContactInputDTO();
+			partnerDTO.setEmailId(partnerUser.getEmailId());
+			partnerDTO.setFirstName(partnerUser.getFirstName());
+			partnerDTO.setLastName(partnerUser.getLastName());
+			partnerDTO.setCompanyName(partnerUser.getCompanyProfileName());
+
+			// ✅ Set<PartnerOrContactInputDTO>
+			Set<PartnerOrContactInputDTO> partnerSet = new HashSet<>();
+			partnerSet.add(partnerDTO);
+			requestDTO.setPartnersOrContactDtos(partnerSet);
+
+			boolean damAccess = utilDao.hasDamAccessByUserId(loggedInUserId);
+
+			asyncComponent.publishDamToNewlyAddedPartners(requestDTO, damAccess);
+
 		}
 
 		return response;
@@ -4561,6 +4617,27 @@ public class DamServiceImpl implements DamService {
 		}
 		response.setStatusCode(200);
 		return response;
+	}
+	
+	@Override
+	public XtremandResponse getAssetListDetailsById(Integer assetId, Integer loggedInUserId) {
+		try {
+			XtremandResponse response = new XtremandResponse();
+			response.setStatusCode(200);
+			Integer companyId = userDao.getCompanyIdByUserId(loggedInUserId);
+			DamListDTO asset = damDao.findAssetListDetailsById(assetId, companyId, loggedInUserId);
+			if (asset == null) {
+				response.setStatusCode(404);
+				response.setMessage("Asset not found");
+				return response;
+			}
+			response.setData(asset);
+			return response;
+		} catch (DamDataAccessException mex) {
+			throw new DamDataAccessException(mex);
+		} catch (Exception e) {
+			throw new DamDataAccessException(e);
+		}
 	}
 
 }

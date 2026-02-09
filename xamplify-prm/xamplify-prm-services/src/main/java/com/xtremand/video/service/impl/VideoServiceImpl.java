@@ -1973,7 +1973,7 @@ public class VideoServiceImpl implements VideoService {
 	@Override
 	public String getVideoPath(Integer videoId) {
 		String videoPath = videoDAO.getVideoPath(videoId);
-		return server_path + videoPath;
+		return server_path + "/" + videoPath;
 	}
 
 	public List<Integer> getChannelVideosIds(Pagination pagination, Integer categoryId, Integer userId) {

@@ -51,6 +51,7 @@ import com.xtremand.mail.service.AsyncComponent;
 import com.xtremand.util.BadRequestException;
 import com.xtremand.util.FileUtil;
 import com.xtremand.util.XamplifyUtil;
+import com.xtremand.util.XamplifyUtils;
 import com.xtremand.util.dto.Pageable;
 import com.xtremand.util.dto.ShareContentRequestDTO;
 import com.xtremand.vanity.url.dto.VanityUrlDetailsDTO;
@@ -882,4 +883,28 @@ public class DamController {
 			@PathVariable String contentType) {
 		return ResponseEntity.ok(damService.damDetailsByDamId(contentId, contentType));
 	}
+	
+	@GetMapping(value = "assets/{assetId}")
+	public ResponseEntity<XtremandResponse> getAssetDetailsByAssetId(@PathVariable Integer assetId,
+			@RequestParam Integer loggedInUserId) {
+		if (!XamplifyUtils.isValidInteger(assetId) || assetId <= 0) {
+			XtremandResponse response = new XtremandResponse();
+			response.setStatusCode(HttpStatus.BAD_REQUEST.value());
+			response.setMessage("Invalid assetId");
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+		}
+		try {
+			XtremandResponse response = damService.getAssetListDetailsById(assetId, loggedInUserId);
+			if (response.getStatusCode() == HttpStatus.NOT_FOUND.value()) {
+				return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+			}
+			return ResponseEntity.ok(response);
+		} catch (Exception e) {
+			XtremandResponse response = new XtremandResponse();
+			response.setStatusCode(HttpStatus.INTERNAL_SERVER_ERROR.value());
+			response.setMessage("Unable to fetch asset details");
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+		}
+	}
+	
 }

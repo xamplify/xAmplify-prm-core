@@ -159,10 +159,10 @@ public class ApproveController {
 	}
 	
 	/** XNFR-813 **/
-	@GetMapping("getStatusTileCountsByModuleType/{loggedInUserId}/{moduleType}")
+	@GetMapping("getStatusTileCountsByModuleType/{loggedInUserId}/{moduleType}/{showTiles}/{categoryId}")
 	public ResponseEntity<XtremandResponse> getStatusTileCountsByModuleType(@PathVariable Integer loggedInUserId,
-			@PathVariable String moduleType) {
-		XtremandResponse response = approveService.getStatusTileCountsByModuleType(loggedInUserId, moduleType);
+			@PathVariable String moduleType, @PathVariable boolean showTiles, @PathVariable Integer categoryId) {
+		XtremandResponse response = approveService.getStatusTileCountsByModuleType(loggedInUserId, moduleType, showTiles, categoryId);
 		return ResponseEntity.ok(response);
 	}
 	

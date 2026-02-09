@@ -604,18 +604,18 @@ public class CategoryServiceImpl implements CategoryService {
 		boolean playBooksRole = listRolesByUserId.indexOf(Role.PLAY_BOOK.getRoleName()) > -1;
 
 		boolean campaignCountPreviewAccess = companyPartnerRole;
-		CategoryItemsDTO campaignDto = setDtoByType(campaignIcon, campaignCount, campaignModule,
-				campaignCountPreviewAccess);
-		dtos.add(campaignDto);
+//		CategoryItemsDTO campaignDto = setDtoByType(campaignIcon, campaignCount, campaignModule,
+//				campaignCountPreviewAccess);
+//		dtos.add(campaignDto);
 
 		boolean designCountPreviewAccess = companyPartnerRole;
 
 		if (!isOnlyPartner && !vanityUrlDetailsDTO.isPartnerLoggedInThroughVanityUrl()) {
 			CategoryItemsDTO formDto = setDtoByType(formIcon, formCount, formModule,
 					designCountPreviewAccess || prmRole);
-			CategoryItemsDTO pageDto = setDtoByType(pageIcon, pageCount, pageModule, designCountPreviewAccess);
+//			CategoryItemsDTO pageDto = setDtoByType(pageIcon, pageCount, pageModule, designCountPreviewAccess);
 			dtos.add(formDto);
-			dtos.add(pageDto);
+//			dtos.add(pageDto);
 		}
 
 		/********* XNFR-169 *************/

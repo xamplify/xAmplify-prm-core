@@ -1208,8 +1208,8 @@ public class VanityURLService {
 		if (XamplifyUtils.isValidString(isInactivePartnersDiv)
 				&& isInactivePartnersDiv.equalsIgnoreCase("isInactivePartnersDiv")) {
 			if (hasVanityAccess) {
-				response.setData(26);
-				response.setMessage("Template ID 26 returned for unapproved user with vanity access: " + emailId);
+				response.setData(62);
+				response.setMessage("Template ID 62 returned for unapproved user with vanity access: " + emailId);
 			} else {
 				response.setData(55);
 				response.setMessage("Template ID 55 returned for unapproved user without vanity access: " + emailId);
@@ -1217,7 +1217,7 @@ public class VanityURLService {
 		} else if (XamplifyUtils.isValidString(isInactivePartnersDiv)
 				&& isInactivePartnersDiv.equalsIgnoreCase("isIncompleteCompanyProfileDiv")) {
 			if (hasVanityAccess) {
-				response.setData(27);
+				response.setData(64);
 				response.setMessage("Template ID 27 returned for unapproved user with vanity access: " + emailId);
 			} else {
 				response.setData(1682);
@@ -1226,12 +1226,12 @@ public class VanityURLService {
 		} else if (XamplifyUtils.isValidString(isInactivePartnersDiv)
 				&& isInactivePartnersDiv.equalsIgnoreCase("teamMemberFilter")) {
 			if (hasVanityAccess) {
-				response.setData(34);
-				response.setMessage("Template ID 34 returned for unapproved user with vanity access: " + emailId);
+				response.setData(75);
+				response.setMessage("Template ID 75 returned for unapproved user with vanity access: " + emailId);
 				response.setStatusCode(200);
 			} else {
-				response.setData(34);
-				response.setMessage("Template ID 34 returned for unapproved user with vanity access: " + emailId);
+				response.setData(75);
+				response.setMessage("Template ID 75 returned for unapproved user with vanity access: " + emailId);
 				response.setStatusCode(200);
 
 			}
@@ -1241,22 +1241,22 @@ public class VanityURLService {
 						&& isInactivePartnersDiv.equalsIgnoreCase("isSingUpPendingDiv")
 						&& XamplifyUtils.isValidString(user.getPassword())
 						&& UserStatus.UNAPPROVED.equals(user.getUserStatus())) {
-					response.setData(2);
-					response.setMessage("Template ID 2 returned for PRM user with password: " + emailId);
+					response.setData(73);
+					response.setMessage("Template ID 73 returned for PRM user with password: " + emailId);
 				} else {
-					response.setData(14);
-					response.setMessage("Template ID 14 returned for PRM user without password: " + emailId);
+					response.setData(74);
+					response.setMessage("Template ID 74 returned for PRM user without password: " + emailId);
 				}
 			} else {
 				if (XamplifyUtils.isValidString(isInactivePartnersDiv)
 						&& isInactivePartnersDiv.equalsIgnoreCase("isSingUpPendingDiv")
 						&& XamplifyUtils.isValidString(user.getPassword())
 						&& UserStatus.UNAPPROVED.equals(user.getUserStatus())) {
-					response.setData(2);
-					response.setMessage("Template ID 2 returned for non-PRM user with password: " + emailId);
+					response.setData(73);
+					response.setMessage("Template ID 73 returned for non-PRM user with password: " + emailId);
 				} else {
-					response.setData(4);
-					response.setMessage("Template ID 4 returned for non-PRM user without password: " + emailId);
+					response.setData(51);
+					response.setMessage("Template ID 51 returned for non-PRM user without password: " + emailId);
 				}
 			}
 			if (!hasVanityAccess) {
