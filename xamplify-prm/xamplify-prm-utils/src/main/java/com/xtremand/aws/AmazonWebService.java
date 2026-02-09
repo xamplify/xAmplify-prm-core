@@ -1029,14 +1029,5 @@ public class AmazonWebService {
             }
         }
     }
-	
-	
-	
-	
-	
-	
-	
-	
-	
 
 }
