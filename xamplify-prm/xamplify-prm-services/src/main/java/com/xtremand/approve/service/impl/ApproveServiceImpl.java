@@ -776,12 +776,12 @@ public class ApproveServiceImpl implements ApproveService {
 	
 	/** XNFR-813 **/
 	@Override
-	public XtremandResponse getStatusTileCountsByModuleType(Integer loggedInUserId, String moduleType) {
+	public XtremandResponse getStatusTileCountsByModuleType(Integer loggedInUserId, String moduleType, boolean showTiles, Integer categoryId) {
 		XtremandResponse response = new XtremandResponse();
 		if (XamplifyUtils.isValidInteger(loggedInUserId) && XamplifyUtils.isValidString(moduleType)) {
 			Integer companyId = userDao.getCompanyIdByUserId(loggedInUserId);
 			ApprovalStatisticsDTO approvalStatisticsDTO = approveDao.getApprovalStatusTileCountsByModuleType(companyId,
-					moduleType);
+					moduleType, showTiles, categoryId);
 			if (approvalStatisticsDTO != null) {
 				XamplifyUtils.addSuccessStatus(response);
 				response.setData(approvalStatisticsDTO);

@@ -198,6 +198,8 @@ public class HibernateApproveDAO implements ApproveDAO {
 
 	private static final String APPROVED_AND_UNPUBLISHED_FILTER_JOIN_QUERY = "{approvedAndUnpublishedFilterJoinQuery}";
 
+	private static final String APPROVED_AND_UNPUBLISHED_FOLDER_CONDITION = "{approvedAndUnpublishedFolderCondition}";
+
 	@Override
 	public PaginatedDTO getAllApprovalList(Pagination pagination, String searchKey,
 			LeftSideNavigationBarItem leftSideNavigationBarItem) {
@@ -1175,18 +1177,75 @@ public class HibernateApproveDAO implements ApproveDAO {
 
 	/** XNFR-884 **/
 	@Override
-	public ApprovalStatisticsDTO getApprovalStatusTileCountsByModuleType(Integer companyId, String moduleType) {
+	public ApprovalStatisticsDTO getApprovalStatusTileCountsByModuleType(Integer companyId, String moduleType, boolean showTiles, Integer categoryId) {
 
-		if (!XamplifyUtils.isValidInteger(companyId) || !XamplifyUtils.isValidString(moduleType)) {
-			return new ApprovalStatisticsDTO();
+	    if (!XamplifyUtils.isValidInteger(companyId) || !XamplifyUtils.isValidString(moduleType)) {
+	        return new ApprovalStatisticsDTO();
+	    }
+
+	    String fromTable = getFromTableByModuleType(moduleType);
+	    if (!XamplifyUtils.isValidString(fromTable)) {
+	        return new ApprovalStatisticsDTO();
+	    }
+	    
+	    String queryString;
+	    if (XamplifyUtils.isValidInteger(categoryId)) {
+	        queryString = buildQueryForNoTiles(fromTable, moduleType);
+	    } else {
+	        queryString = buildQueryForTiles(fromTable, moduleType);
+	    }
+
+	    HibernateSQLQueryResultRequestDTO hibernateSQLQueryResultRequestDTO = new HibernateSQLQueryResultRequestDTO();
+	    hibernateSQLQueryResultRequestDTO.setQueryString(queryString);
+	    hibernateSQLQueryResultRequestDTO.getQueryParameterDTOs().add(new QueryParameterDTO(COMPANY_ID, companyId));
+	    if (XamplifyUtils.isValidInteger(categoryId)) {
+	    	if (queryString.contains(":category_id")) {
+	    	    hibernateSQLQueryResultRequestDTO.getQueryParameterDTOs().add(new QueryParameterDTO("category_id", categoryId));
+	    	}
+	    	if (queryString.contains(":id")) {
+	    	    hibernateSQLQueryResultRequestDTO.getQueryParameterDTOs().add(new QueryParameterDTO("id", categoryId));
+	    	}
+
+	    }
+	    return (ApprovalStatisticsDTO) hibernateSQLQueryResultUtilDao.getDto(hibernateSQLQueryResultRequestDTO, ApprovalStatisticsDTO.class);
+	}
+	
+	private String buildQueryForNoTiles(String fromTable, String moduleType) {
+		String query = "select cast(count(distinct case when t.approval_status = 'APPROVED' {approvedAndUnpublishedFilterCondition} then t.id end) as integer) as \"approvedCount\", "
+				+ "cast(count(distinct case when t.approval_status = 'REJECTED'  {approvedAndUnpublishedFilterCondition} then t.id end) as integer) as \"rejectedCount\", "
+				+ "cast(count(distinct case when t.approval_status = 'CREATED' {approvedAndUnpublishedFilterCondition} then t.id end) as integer) as \"pendingCount\", "
+				+ "cast(count(distinct case when t.approval_status = 'DRAFT' {approvedAndUnpublishedFilterCondition} then t.id end) as integer) as \"draftCount\", "
+				+ "cast(count(distinct t.id) as integer) as \"totalCount\" from " + fromTable
+				+ " t {approvedAndUnpublishedFilterJoinQuery} {approvedAndUnpublishedFolderCondition}";
+
+		if (ModuleType.DAM.name().equals(moduleType)) {
+			query += " and parent_id is null and created_for_company is null ";
+			query = query.replace(APPROVED_AND_UNPUBLISHED_FILTER_JOIN_QUERY,
+					"left JOIN xt_dam_partner dp ON t.id = dp.dam_id");
+			query = query.replace(APPROVED_AND_UNPUBLISHED_FILTER_CONDITION, "and dp.dam_id IS null");
+			query = query.replace(APPROVED_AND_UNPUBLISHED_FOLDER_CONDITION,
+					"left join xt_category_module cm on cm.dam_id=t.id left join xt_category c on c.id= cm.category_id where t.company_id=:companyId and c.id=:id");
+		} else if (ModuleType.TRACK.name().equals(moduleType)) {
+			query += " and type = 'TRACK'";
+			query = query.replace(APPROVED_AND_UNPUBLISHED_FILTER_JOIN_QUERY, "");
+			query = query.replace(APPROVED_AND_UNPUBLISHED_FILTER_CONDITION, "and is_published = false");
+			query = query.replace(APPROVED_AND_UNPUBLISHED_FOLDER_CONDITION,
+					"left JOIN xt_category_module cm  ON t.id = cm.learning_track_id where cm.category_id=:category_id and t.company_id=:companyId");
+		} else if (ModuleType.PLAYBOOK.name().equals(moduleType)) {
+			query += " and type = 'PLAYBOOK'";
+			query = query.replace(APPROVED_AND_UNPUBLISHED_FILTER_JOIN_QUERY, "");
+			query = query.replace(APPROVED_AND_UNPUBLISHED_FILTER_CONDITION, "and is_published = false");
+			query = query.replace(APPROVED_AND_UNPUBLISHED_FOLDER_CONDITION,
+					"left JOIN xt_category_module cm  ON t.id = cm.learning_track_id where cm.category_id=:category_id and t.company_id=:companyId");
+		} else {
+			query = query.replace(APPROVED_AND_UNPUBLISHED_FILTER_JOIN_QUERY, "");
+			query = query.replace(APPROVED_AND_UNPUBLISHED_FILTER_CONDITION, "");
 		}
+		return query;
+	}
 
-		String fromTable = getFromTableByModuleType(moduleType);
-		if (!XamplifyUtils.isValidString(fromTable)) {
-			return new ApprovalStatisticsDTO();
-		}
-
-		String queryString = "select cast(count(distinct case when t.approval_status = 'APPROVED' {approvedAndUnpublishedFilterCondition} then t.id end) as integer) as \"approvedCount\", "
+	private String buildQueryForTiles(String fromTable, String moduleType) {
+		String query = "select cast(count(distinct case when t.approval_status = 'APPROVED' {approvedAndUnpublishedFilterCondition} then t.id end) as integer) as \"approvedCount\", "
 				+ "cast(count(distinct case when t.approval_status = 'REJECTED'  {approvedAndUnpublishedFilterCondition} then t.id end) as integer) as \"rejectedCount\", "
 				+ "cast(count(distinct case when t.approval_status = 'CREATED' {approvedAndUnpublishedFilterCondition} then t.id end) as integer) as \"pendingCount\", "
 				+ "cast(count(distinct case when t.approval_status = 'DRAFT' {approvedAndUnpublishedFilterCondition} then t.id end) as integer) as \"draftCount\", "
@@ -1194,28 +1253,23 @@ public class HibernateApproveDAO implements ApproveDAO {
 				+ " t {approvedAndUnpublishedFilterJoinQuery}   where company_id = :companyId ";
 
 		if (ModuleType.DAM.name().equals(moduleType)) {
-			queryString += " and parent_id is null and created_for_company is null ";
-			queryString = queryString.replace(APPROVED_AND_UNPUBLISHED_FILTER_JOIN_QUERY,
-					"left JOIN  xt_dam_partner dp ON t.id = dp.dam_id");
-			queryString = queryString.replace(APPROVED_AND_UNPUBLISHED_FILTER_CONDITION, "and dp.dam_id IS null");
+			query += " and parent_id is null and created_for_company is null ";
+			query = query.replace(APPROVED_AND_UNPUBLISHED_FILTER_JOIN_QUERY,
+					"left JOIN xt_dam_partner dp ON t.id = dp.dam_id");
+			query = query.replace(APPROVED_AND_UNPUBLISHED_FILTER_CONDITION, "and dp.dam_id IS null");
 		} else if (ModuleType.TRACK.name().equals(moduleType)) {
-			queryString += " and type = 'TRACK'";
-			queryString = queryString.replace(APPROVED_AND_UNPUBLISHED_FILTER_JOIN_QUERY, "");
-			queryString = queryString.replace(APPROVED_AND_UNPUBLISHED_FILTER_CONDITION, "and is_published = false");
+			query += " and type = 'TRACK'";
+			query = query.replace(APPROVED_AND_UNPUBLISHED_FILTER_JOIN_QUERY, "");
+			query = query.replace(APPROVED_AND_UNPUBLISHED_FILTER_CONDITION, "and is_published = false");
 		} else if (ModuleType.PLAYBOOK.name().equals(moduleType)) {
-			queryString += " and type = 'PLAYBOOK'";
-			queryString = queryString.replace(APPROVED_AND_UNPUBLISHED_FILTER_JOIN_QUERY, "");
-			queryString = queryString.replace(APPROVED_AND_UNPUBLISHED_FILTER_CONDITION, "and is_published = false");
+			query += " and type = 'PLAYBOOK'";
+			query = query.replace(APPROVED_AND_UNPUBLISHED_FILTER_JOIN_QUERY, "");
+			query = query.replace(APPROVED_AND_UNPUBLISHED_FILTER_CONDITION, "and is_published = false");
 		} else {
-			queryString = queryString.replace(APPROVED_AND_UNPUBLISHED_FILTER_JOIN_QUERY, "");
-			queryString = queryString.replace(APPROVED_AND_UNPUBLISHED_FILTER_CONDITION, "");
+			query = query.replace(APPROVED_AND_UNPUBLISHED_FILTER_JOIN_QUERY, "");
+			query = query.replace(APPROVED_AND_UNPUBLISHED_FILTER_CONDITION, "");
 		}
-
-		HibernateSQLQueryResultRequestDTO hibernateSQLQueryResultRequestDTO = new HibernateSQLQueryResultRequestDTO();
-		hibernateSQLQueryResultRequestDTO.setQueryString(queryString);
-		hibernateSQLQueryResultRequestDTO.getQueryParameterDTOs().add((new QueryParameterDTO(COMPANY_ID, companyId)));
-		return (ApprovalStatisticsDTO) hibernateSQLQueryResultUtilDao.getDto(hibernateSQLQueryResultRequestDTO,
-				ApprovalStatisticsDTO.class);
+		return query;
 	}
 
 	/** XNFR-884 **/

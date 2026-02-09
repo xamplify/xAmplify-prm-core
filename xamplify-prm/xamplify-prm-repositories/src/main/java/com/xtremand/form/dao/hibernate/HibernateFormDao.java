@@ -326,7 +326,7 @@ public class HibernateFormDao implements FormDao {
 			updatedFormAlias = webUrl;
 		}
 
-		updatedFormAlias = updatedFormAlias + "f/" + formAlias;
+		updatedFormAlias = webUrl + "f/" + formAlias;
 		formDto.setAilasUrl(updatedFormAlias);
 		formDto.setEmbedUrl("<iframe width=\"1000\" height=\"720\" src=" + updatedFormAlias
 				+ " frameborder=\"0\" allowfullscreen ></iframe>");

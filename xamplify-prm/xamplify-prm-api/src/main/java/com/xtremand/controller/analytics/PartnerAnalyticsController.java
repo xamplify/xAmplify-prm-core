@@ -623,4 +623,11 @@ public class PartnerAnalyticsController {
 	public ResponseEntity<XtremandResponse> getAllPlaybookNamesForFilter(@RequestBody Pagination pagination) {
 		return ResponseEntity.ok(partnerAnalyticsService.getAllPlaybookNamesForFilter(pagination));
 	}
+	
+	@RequestMapping(value = "/inactive-partner-analytics", method = RequestMethod.POST)
+	public ResponseEntity<?> inActivePartnerAnalytics(@RequestBody Pagination pagination) {
+		Map<String, Object> resultMap = partnerAnalyticsService.getInActivePartnersAnalytics(pagination);
+		return ResponseEntity.status(HttpStatus.OK).body(resultMap);
+	}
+	
 }

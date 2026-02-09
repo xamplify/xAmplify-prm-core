@@ -36,7 +36,7 @@ public interface ApproveService {
 
 	public XtremandResponse checkIsAssetApprover(Integer loggedInUserId);
 
-	public XtremandResponse getStatusTileCountsByModuleType(Integer loggedInUserId, String moduleType);
+	public XtremandResponse getStatusTileCountsByModuleType(Integer loggedInUserId, String moduleType, boolean showTiles, Integer categoryId);
 
 	public Map<String, Object> handleReApprovalVersionForVideoTypeAsset(Integer loggedInUserId,
 			List<ContentReApprovalDTO> videoTypeAssetContentDetails, List<ApprovalStatusHistory> approvalHistoryList,

@@ -588,5 +588,11 @@ public class AsyncComponent {
     public void updateDealStatusToxAmplify(DealDto dealDto) {
             asyncService.updateDealStatusToxAmplify(dealDto);
     }
+	
+	@Async(value = "userListScheduler")
+	public void processInvalidStatus(List<User> nonProcessedUsers, UserList userList, boolean isCreate) {
+		logger.info("from Asynccomponent processInvalidStatus() : ");
+		asyncService.processInvalidStatus(nonProcessedUsers, userList, isCreate);
+	}
 
 }

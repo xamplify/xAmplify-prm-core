@@ -200,4 +200,6 @@ public interface DamService {
 	public XtremandResponse damDetailsByDamId(Integer contentId, String contentType);
 
 	public HttpServletResponse findAllPartnersByDamId(Pageable pageable, Integer damId, Integer userId, HttpServletResponse response);
+	
+	XtremandResponse getAssetListDetailsById(Integer assetId, Integer loggedInUserId);
 }

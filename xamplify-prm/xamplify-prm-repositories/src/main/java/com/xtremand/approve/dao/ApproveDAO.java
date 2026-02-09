@@ -77,7 +77,7 @@ public interface ApproveDAO {
 	public List<MultiSelectApprovalDTO> getPendingApprovalEntityIdsByCreatorAndModuleType(List<Integer> createdByIds, String moduleType);
 
 	/** XNFR-813 **/
-	public ApprovalStatisticsDTO getApprovalStatusTileCountsByModuleType(Integer companyId, String string);
+	public ApprovalStatisticsDTO getApprovalStatusTileCountsByModuleType(Integer companyId, String moduleType, boolean showTiles, Integer categoryId);
 
 	public void updateApprovalStatusForAssetInDraft(Integer damId, Integer updatedBy, ApprovalStatusType approvalStatusType);
 
