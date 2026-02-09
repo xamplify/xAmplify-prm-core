@@ -10,5 +10,5 @@ public interface ActivityDAO {
 	Map<String, Object> fetchRecentActivities(Pagination pagination);
 	
 	/**XNFR-867**/
-	Map<String, Object> fetchRecentActivitiesForCompanyJourney(Pagination pagination, List<Integer> userIds);
+	Map<String, Object> fetchRecentActivitiesForCompanyJourney(Pagination pagination, List<Integer> userIds); 
 }
