@@ -2807,6 +2807,46 @@ public class UserListServiceImpl implements UserListService {
 							&& criteria.getOperationName() == OPERATION_NAME.like) {
 						sb.append(" lower(xcs.stage_name) like '%" + criteria.getValue1().toString().toLowerCase()
 								+ "%' ");
+					} else if ((criteria.getProperty().equalsIgnoreCase("Group Name")
+							|| criteria.getProperty().equalsIgnoreCase("groupName"))
+							&& criteria.getOperationName() == OPERATION_NAME.eq) {
+
+						String value = criteria.getValue1().toString().toLowerCase();
+
+						sb.append(" exists ( "
+								+ "   select 1 "
+								+ "   from xt_team_member_group tg "
+								+ "   join xt_team_member_group_user_mapping tgum "
+								+ "        on tgum.team_member_group_id = tg.id "
+								+ "   join xt_partner_team_group_mapping ptgm "
+								+ "        on tgum.id = ptgm.team_member_group_user_mapping_id "
+								+ "   join xt_partnership p "
+								+ "        on p.id = ptgm.partnership_id "
+								+ "   where p.vendor_company_id = u.company_id "   
+								+ "     and p.partner_id = uul.user_id "          
+								+ "     and lower(tg.name) = '" + value + "' "
+								+ " ) ");
+
+					} else if ((criteria.getProperty().equalsIgnoreCase("Group Name")
+							|| criteria.getProperty().equalsIgnoreCase("groupName"))
+							&& criteria.getOperationName() == OPERATION_NAME.like) {
+
+						String value = criteria.getValue1().toString().toLowerCase();
+
+						sb.append(" exists ( "
+								+ "   select 1 "
+								+ "   from xt_team_member_group tg "
+								+ "   join xt_team_member_group_user_mapping tgum "
+								+ "        on tgum.team_member_group_id = tg.id "
+								+ "   join xt_partner_team_group_mapping ptgm "
+								+ "        on tgum.id = ptgm.team_member_group_user_mapping_id "
+								+ "   join xt_partnership p "
+								+ "        on p.id = ptgm.partnership_id "
+								+ "   where p.vendor_company_id = u.company_id "
+								+ "     and p.partner_id = uul.user_id "
+								+ "     and lower(tg.name) like '%" + value + "%' "
+								+ " ) ");
+
 					}
 				}
 			}
