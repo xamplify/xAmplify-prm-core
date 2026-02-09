@@ -201,4 +201,5 @@ public interface DamService {
 
 	public HttpServletResponse findAllPartnersByDamId(Pageable pageable, Integer damId, Integer userId, HttpServletResponse response);
 	
+	XtremandResponse getAssetListDetailsById(Integer assetId, Integer loggedInUserId);
 }

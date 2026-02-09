@@ -215,7 +215,7 @@ public class HibernateDamDao implements DamDao {
 
 	private static final String PARTNER_NOT_SIGNED = "NOTSIGNED";
 	
-	private static final String HOST = "http://localhost:8080/";
+	private static final String HOST = "http://localhost:8000/";
 	
 	private static final String XAMPLIFY_PRM = "xamplify-prm-api";
 
@@ -592,9 +592,9 @@ public class HibernateDamDao implements DamDao {
 			boolean hasAccess = isSuperVisorOrAdmin || pagination.getUserId().equals(asset.getCreatedBy());
 			updatedAsset.setEdit(hasAccess);
 			updatedAsset.setDelete(hasAccess);
-			String thumbnailPath = asset.getVideoId() != null ? serverPath + asset.getThumbnailPath()
+			String thumbnailPath = asset.getVideoId() != null ? serverPath + "/" + asset.getThumbnailPath()
 					: asset.getThumbnailPath();
-			String assetPath = asset.getVideoId() != null ? serverPath + asset.getAssetPath() : asset.getAssetPath();
+			String assetPath = asset.getVideoId() != null ? serverPath + "/" + asset.getAssetPath() : asset.getAssetPath();
 			setVideoFileDTOProperties(asset, updatedAsset, videoFileDTO, thumbnailPath, assetPath);
 			updatedAsset.setThumbnailPath(thumbnailPath);
 			updatedAsset.setAssetPath(assetPath);
@@ -2562,7 +2562,7 @@ public class HibernateDamDao implements DamDao {
 			boolean updateApprovalStatus, String approvalStatusTypeInString) {
 		if (XamplifyUtils.isValidInteger(videoFileUploadForm.getDamId())) {
 			String sqlQueryString = "update xt_dam set asset_name=TRIM(:assetName), is_white_labeled_asset_shared_with_partners = :shareAsWhiteLabeledAsset, "
-					+ "updated_by = :updatedBy, is_added_to_quick_links = :addedToQuickLinks {updateApprovalStatusForDraftAssetMergeTag}, slug = TRIM(:slug),  where id = :damId";
+					+ "updated_by = :updatedBy, is_added_to_quick_links = :addedToQuickLinks {updateApprovalStatusForDraftAssetMergeTag}, slug = TRIM(:slug)  where id = :damId";
 
 			if (updateApprovalStatus && XamplifyUtils.isValidString(approvalStatusTypeInString)) {
 				sqlQueryString = sqlQueryString.replace(UPDATE_APPROVAL_STATUS_FOR_DRAFTS_MERGE_TAG,
@@ -4918,6 +4918,71 @@ public class HibernateDamDao implements DamDao {
 		}
 
 		return finalQueryString;
+	}
+	
+	@Override
+	public DamListDTO findAssetListDetailsById(Integer assetId, Integer companyId, Integer userId) {
+		try {
+			if (!XamplifyUtils.isValidInteger(assetId) || !XamplifyUtils.isValidInteger(companyId)) {
+				return null;
+			}
+			Session session = sessionFactory.getCurrentSession();
+			String finalQueryString = buildAssetListQueryForAssetId() + " and d.id = :assetId";
+			SQLQuery query = session.createSQLQuery(finalQueryString);
+			query.setParameter(COMPANY_ID, companyId);
+			query.setParameter(ASSET_ID, assetId);
+			DamListDTO asset = (DamListDTO) query.setResultTransformer(Transformers.aliasToBean(DamListDTO.class))
+					.uniqueResult();
+			if (asset == null) {
+				return null;
+			}
+			return buildSingleAssetListDetails(asset, companyId, userId, session);
+		} catch (HibernateException | DamDataAccessException e) {
+			throw new DamDataAccessException(e);
+		} catch (Exception ex) {
+			throw new DamDataAccessException(ex);
+		}
+	}
+	
+	private String buildAssetListQueryForAssetId() {
+		Pagination pagination = new Pagination();
+		String listQuery = listAssetQuery.replace(ASSET_FILTER_TYPE_MERGE_TAG, "")
+				.replace(RECIVED_FROM_FILTER_QUERY, "").replace("{list_search_query}", "")
+				.replace(EXCLUDE_BEE_TEMPLATE, "").replace("{category_filter}", "")
+				.replace("{partner_query}", "and d.created_for_company is null").replace("publishedCondition", "")
+				.replace("unPublishedCondition", "");
+		listQuery = applyApprovalStatusFilter(pagination, listQuery);
+		return listQuery;
+	}
+	
+	private DamListDTO buildSingleAssetListDetails(DamListDTO asset, Integer companyId, Integer userId,
+			Session session) {
+		Pagination pagination = new Pagination();
+		pagination.setCompanyId(companyId);
+		pagination.setUserId(userId);
+		List<DamListDTO> assets = Collections.singletonList(asset);
+		List<DamListDTO> updatedAssets = new ArrayList<>();
+		boolean isSuperVisorOrAdmin = userId != null && utilDao.isSuperVisorOrAdmin(userId);
+		iterateAssetsAndSetProperties(pagination, false, session, assets, updatedAssets, isSuperVisorOrAdmin);
+		if (updatedAssets.isEmpty()) {
+			return null;
+		}
+		DamListDTO updatedAsset = updatedAssets.get(0);
+		setCdnPaths(updatedAsset);
+		return updatedAsset;
+	}
+
+	private void setCdnPaths(DamListDTO item) {
+		if (XamplifyUtils.isValidString(item.getAssetPath())) {
+			String updatedAssetPath = xamplifyUtil.replaceS3WithCloudfrontViceVersa(item.getAssetPath());
+			item.setCdnAssetPath(updatedAssetPath);
+
+		}
+		if (XamplifyUtils.isValidString(item.getThumbnailPath())) {
+			String updatedThumbnailPathPath = xamplifyUtil
+					.replaceS3WithCloudfrontViceVersa(item.getThumbnailPath());
+			item.setCdnThumbnailPath(updatedThumbnailPathPath);
+		}
 	}
 
 }

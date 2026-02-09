@@ -220,5 +220,7 @@ public interface PartnerAnalyticsService {
 
 	public HttpServletResponse downloadAllPartnersDetailsReport(PartnerJourneyRequestDTO partnerJourneyRequestDTO,
 			HttpServletResponse response);
+	
+	Map<String, Object> getInActivePartnersAnalytics(Pagination pagination);
 
 }

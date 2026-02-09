@@ -131,11 +131,11 @@ public class HibernateVideoDao implements VideoDao {
 				break;
 
 			case VIDEO_PATH:
-				videoFile.setFullVideoPath(server_path + videoFile.getUri());
+				videoFile.setFullVideoPath(server_path + "/" + videoFile.getUri());
 				videoFile.setFullImagePath(videoFile.getImageUri() != null && videoFile.getImageUri().length() > 0
-						? server_path + videoFile.getImageUri()
+						? server_path + "/" + videoFile.getImageUri()
 						: "");
-				videoFile.setFullGifPath(server_path + videoFile.getGifUri());
+				videoFile.setFullGifPath(server_path + "/" + videoFile.getGifUri());
 				break;
 			case INCREMENT_VIEW:
 				videoFile.setViews(videoFile.getViews().intValue() + 1);

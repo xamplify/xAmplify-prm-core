@@ -407,5 +407,7 @@ public interface DamDao extends FinderDAO<Dam> {
 			List<Integer> teamMemberParnterListIds);
 
 	public void delateDamPartnersByCompanyId(Integer companyId);
+	
+	DamListDTO findAssetListDetailsById(Integer assetId, Integer companyId, Integer userId);
 
 }

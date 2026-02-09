@@ -3285,6 +3285,7 @@ public class AsyncService {
 		changeProgessStatusAndEmailValidationIndStatus(userList, validationRequiredUsers);
 		userListDAO.updateUserListProcessingStatus(userList);
 		if (XamplifyUtils.isNotEmptyList(validationRequiredUsers)) {
+			asyncComponent.processInvalidStatus(validationRequiredUsers, userList, isCreate);
 		} else {
 			sendEmailNotifications(userList, loggedInUser, isCreate);
 		}
@@ -4911,6 +4912,49 @@ public class AsyncService {
 	
 	public void updateDealStatusToxAmplify(DealDto dealDto) {
 		dealService.updateDealStatusToxAmplify(dealDto);
+	}
+	
+	@Transactional(readOnly = false, propagation = Propagation.REQUIRED, rollbackFor = Exception.class)
+	public void processInvalidStatus(List<User> nonProcessedUsers, UserList userList, boolean isCreate) {
+		long startTime = XamplifyUtils.getStartTime();
+		String methodName = "processInvalidStatus(" + userList.getId() + ")";
+		String methodStartedDebugMessage = methodName + " started.Please wait for 3 seconds...";
+		logger.debug(methodStartedDebugMessage);
+		boolean usageLlimitReached = false;
+		boolean inprocess = false;
+		try {
+			Thread.sleep(3000);
+			for (User user : nonProcessedUsers) {
+				String validatingEmailIdDebugMessage = "Setting Email Validation true for  " + user.getEmailId();
+				logger.debug(validatingEmailIdDebugMessage);
+				user.setEmailValid(true);
+				user.setEmailValidationInd(true);
+				user.setEmailCategory("valid");
+				userDAO.updateUser(user);
+			}
+			String validationCompletedDebugMessage = "Validation Completed For " + methodName
+					+ ".But Still need to update data into tables";
+			logger.debug(validationCompletedDebugMessage);
+			upateUserListEmailValidationIndValue(userList, usageLlimitReached, inprocess);
+			userList.setValidationInProgress(false);
+			userListDAO.updateUserListProcessingStatus(userList);
+		} catch (Exception e) {
+			logger.error("processInvalidStatus(userListId:" + userList.getId() + ")", e);
+		}
+
+	}
+	
+	private void upateUserListEmailValidationIndValue(UserList userList, boolean usageLlimitReached,
+			boolean inprocess) {
+		if (xamplifyUtil.isDev()) {
+			userList.setEmailValidationInd(true);
+		} else {
+			if (usageLlimitReached == true || inprocess == true) {
+				userList.setEmailValidationInd(false);
+			} else if (usageLlimitReached == false && inprocess == false) {
+				userList.setEmailValidationInd(true);
+			}
+		}
 	}
 
 }

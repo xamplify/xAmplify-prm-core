@@ -82,7 +82,6 @@ public class HibernateVanityURLDao implements VanityURLDao {
 
 	@Override
 	public CompanyProfile getCompanyProfileByCompanyProfileName(String companyProfileName) {
-		companyProfileName = utilDao.getPrmCompanyProfileName();
 		Session session = sessionFactory.getCurrentSession();
 		Criteria criteria = session.createCriteria(CompanyProfile.class);
 		criteria.add(Restrictions.eq("companyProfileName", utilDao.getPrmCompanyProfileName()));

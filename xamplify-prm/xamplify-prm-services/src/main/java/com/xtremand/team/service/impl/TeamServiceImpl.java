@@ -44,6 +44,7 @@ import com.xtremand.domain.bom.DomainModuleNameType;
 import com.xtremand.domain.dao.DomainDao;
 import com.xtremand.exception.DuplicateEntryException;
 import com.xtremand.form.dao.FormDao;
+import com.xtremand.formbeans.EmailTemplateDTO;
 import com.xtremand.formbeans.ReferedVendorDTO;
 import com.xtremand.formbeans.UserDTO;
 import com.xtremand.formbeans.VendorInvitationDTO;
@@ -1580,9 +1581,35 @@ public class TeamServiceImpl implements TeamService {
 	}
 
 	private void fetchCustomTemplate(Integer userId, Integer templateId, XtremandResponse response) {
+		EmailTemplateDTO customTemplate = teamDao.fetchCustomTemplate(templateId, userId);
+		if (customTemplate != null) {
+			customTemplate.setBody(customTemplate.getBody().replace("<Vanity_Company_Logo>",
+					serverPath + customTemplate.getCompanyLogoPath()));
+			customTemplate.setBody(customTemplate.getBody().replace(replaceCompanyLogo,
+					serverPath + customTemplate.getCompanyLogoPath()));
+			response.setStatusCode(200);
+			response.setMessage("Successfully fetched custom email template.");
+			response.setData(customTemplate);
+		} else {
+			fetchDefaultTemplate(userId, templateId, response);
+		}
 	}
 
 	private void fetchDefaultTemplate(Integer userId, Integer templateId, XtremandResponse response) {
+		EmailTemplateDTO defaultTemplate = teamDao.fetchDefaultTemplate(templateId, userId);
+		if (defaultTemplate != null) {
+			defaultTemplate.setBody(defaultTemplate.getBody().replace("<Vanity_Company_Logo>",
+					serverPath + defaultTemplate.getCompanyLogoPath()));
+			defaultTemplate.setBody(defaultTemplate.getBody().replace(replaceCompanyLogo,
+					serverPath + defaultTemplate.getCompanyLogoPath()));
+			response.setStatusCode(200);
+			response.setMessage("Successfully fetched default email template.");
+			response.setData(defaultTemplate);
+		} else {
+			response.setStatusCode(404);
+			response.setMessage("No default email template found for the provided ID.");
+			response.setData(null);
+		}
 	}
 
 	@Override

@@ -409,6 +409,8 @@ public class MdfServiceImpl implements MdfService {
 	public XtremandResponse createMdfForm(FormDTO formDto) {
 		try {
 			Integer userId = userDao.getUserIdByEmail(formDto.getUserName());
+			String companyProfileName = userDao.getCompanyProfileNameByUserId(userId);
+			formDto.setName(companyProfileName + "-mdf-request-form");
 			formDto.setFormType(FormTypeEnum.MDF_REQUEST_FORM);
 			formDto.setCreatedBy(userId);
 			formDto.setBackgroundColor("#ffffff");
