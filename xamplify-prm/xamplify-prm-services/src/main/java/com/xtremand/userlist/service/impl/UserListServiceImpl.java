@@ -2500,10 +2500,7 @@ public class UserListServiceImpl implements UserListService {
 			userList.setAlias(existingUserList.getAlias());
 			response = validateAssignedList(users, userListDTO.getName(), loggedInUser, response);
 			if (response.getStatusCode() == 200) {
-				if (!nonExistingEmailIds.isEmpty()) {
-				}
-				if (!(nonExistingEmailIds.isEmpty())) {
-				} else if (nonExistingEmailIds.isEmpty() && !userListDTO.isPartnerUserList()) {
+				if (nonExistingEmailIds.isEmpty() && !userListDTO.isPartnerUserList()) {
 					if (userList.getUsers().stream().anyMatch(u -> u.isEmailValidationInd() == false)) {
 						userList.setEmailValidationInd(false);
 					} else if (userList.getUsers().stream().allMatch(u -> u.isEmailValidationInd() == true)) {
